@@ -1,0 +1,6 @@
+{
+  "stylelint.enable": false,
+  "css.validate": true,
+  "typescript.validate.enable": true,
+  "javascript.validate.enable": true
+}
