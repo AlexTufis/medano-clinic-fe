@@ -1,12 +1,14 @@
 import React, { FC, useState, FormEvent } from 'react';
 import { login } from '../api/auth';
 import { LoginDto } from '../types/dto';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Props {
-  onLogin: () => void;
+  onLogin: (email: string) => void;
 }
 
 const LoginForm: FC<Props> = ({ onLogin }) => {
+  const { t } = useLanguage();
   const [form, setForm] = useState<LoginDto>({ email: '', password: '' });
   const [error, setError] = useState<string>('');
 
@@ -20,7 +22,7 @@ const LoginForm: FC<Props> = ({ onLogin }) => {
     try {
       setError('');
       await login(form);
-      onLogin();
+      onLogin(form.email);
     } catch {
       setError('Invalid credentials');
     }
@@ -28,10 +30,10 @@ const LoginForm: FC<Props> = ({ onLogin }) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h2>Welcome Back</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <h2>{t('auth.welcomeBack')}</h2>
+      {error && <p style={{ color: 'red' }}>{t('auth.invalidCredentials')}</p>}
       <div>
-        <label htmlFor="email">Email Address</label>
+        <label htmlFor="email">{t('auth.email')}</label>
         <input
           id="email"
           name="email"
@@ -39,11 +41,11 @@ const LoginForm: FC<Props> = ({ onLogin }) => {
           value={form.email}
           onChange={handleChange}
           required
-          placeholder="Enter your email"
+          placeholder={t('auth.email')}
         />
       </div>
       <div>
-        <label htmlFor="password">Password</label>
+        <label htmlFor="password">{t('auth.password')}</label>
         <input
           id="password"
           name="password"
@@ -51,10 +53,10 @@ const LoginForm: FC<Props> = ({ onLogin }) => {
           value={form.password}
           onChange={handleChange}
           required
-          placeholder="Enter your password"
+          placeholder={t('auth.password')}
         />
       </div>
-      <button type="submit">Sign In</button>
+      <button type="submit">{t('auth.login')}</button>
     </form>
   );
 };
