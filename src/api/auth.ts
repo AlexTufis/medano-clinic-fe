@@ -1,17 +1,22 @@
-import axios from "axios";
-import { LoginDto, RegisterDto } from "../types/dto";
+import { LoginRequestDto, LoginResponseDto, RegisterDto } from "../types/dto";
+import TokenStorage from "../utils/tokenStorage";
+import apiClient from "./apiClient";
 
-const api = axios.create({
-  baseURL: "https://localhost:7000",
-  withCredentials: true, // send cookies for cookie-auth
-});
+export async function login(dto: LoginRequestDto): Promise<LoginResponseDto> {
+  const response = await apiClient.post<LoginResponseDto>("/Auth/login", dto);
 
-export async function login(dto: LoginDto): Promise<void> {
-  await api.post("/api/Auth/login", dto);
+  // Store the token if it exists in the response
+  if (response.data.token) {
+    TokenStorage.setToken(response.data.token);
+  }
+
+  return response.data;
 }
 
 export async function logout(): Promise<void> {
-  await api.post("/api/Auth/logout");
+  await apiClient.post("/Auth/logout");
+  // Clear the stored token
+  TokenStorage.clearToken();
 }
 
 export async function register(dto: RegisterDto): Promise<{ message: string }> {
@@ -27,8 +32,8 @@ export async function register(dto: RegisterDto): Promise<{ message: string }> {
     ...(dto.gender !== undefined && { gender: dto.gender }),
   };
 
-  const res = await api.post<{ message: string }>(
-    "/api/Auth/register",
+  const res = await apiClient.post<{ message: string }>(
+    "/Auth/register",
     cleanedDto
   );
   return res.data;

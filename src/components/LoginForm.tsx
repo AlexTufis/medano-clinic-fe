@@ -1,16 +1,17 @@
 import React, { FC, useState, FormEvent } from 'react';
 import { login } from '../api/auth';
-import { LoginDto } from '../types/dto';
+import { LoginRequestDto } from '../types/dto';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface Props {
-  onLogin: (email: string) => void;
+  onLogin: (email: string, role: string) => void;
 }
 
 const LoginForm: FC<Props> = ({ onLogin }) => {
   const { t } = useLanguage();
-  const [form, setForm] = useState<LoginDto>({ email: '', password: '' });
+  const [form, setForm] = useState<LoginRequestDto>({ email: '', password: '' });
   const [error, setError] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -19,12 +20,18 @@ const LoginForm: FC<Props> = ({ onLogin }) => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       setError('');
-      await login(form);
-      onLogin(form.email);
-    } catch {
+      const response = await login(form);
+      console.log('Login response:', response); // Debug log
+      console.log('Calling onLogin with:', form.email, response.role); // Debug log
+      onLogin(form.email, response.role);
+    } catch (error) {
+      console.error('Login error:', error); // Debug log
       setError('Invalid credentials');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -42,6 +49,7 @@ const LoginForm: FC<Props> = ({ onLogin }) => {
           onChange={handleChange}
           required
           placeholder={t('auth.email')}
+          disabled={isLoading}
         />
       </div>
       <div>
@@ -54,9 +62,12 @@ const LoginForm: FC<Props> = ({ onLogin }) => {
           onChange={handleChange}
           required
           placeholder={t('auth.password')}
+          disabled={isLoading}
         />
       </div>
-      <button type="submit">{t('auth.login')}</button>
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? t('auth.loggingIn') : t('auth.login')}
+      </button>
     </form>
   );
 };

@@ -5,11 +5,12 @@ import {
   User, 
   Doctor, 
   Appointment, 
-  Review, 
   DoctorSchedule, 
   CreateAppointmentDto,
-  CreateReviewDto 
+  CreateReviewDto,
+  ReviewDto 
 } from '../types/dto';
+import { getDoctors, createAppointment, getClientAppointments, createReview, getReviews } from '../api/client';
 import './ClientDashboard.css';
 
 interface ClientDashboardProps {
@@ -17,138 +18,185 @@ interface ClientDashboardProps {
   currentUser: User; // In a real app, this would come from authentication
 }
 
+// Dummy data for development
+const dummyDoctors: Doctor[] = [
+  {
+    id: '1',
+    firstName: 'Dr. Maria',
+    lastName: 'Popescu',
+    specialization: 'Cardiologie',
+    email: 'maria.popescu@clinic.ro',
+    phone: '+40721234567',
+    isActive: true
+  },
+  {
+    id: '2',
+    firstName: 'Dr. Ion',
+    lastName: 'Ionescu',
+    specialization: 'Neurologie',
+    email: 'ion.ionescu@clinic.ro',
+    phone: '+40721234568',
+    isActive: true
+  },
+  {
+    id: '3',
+    firstName: 'Dr. Ana',
+    lastName: 'Dumitrescu',
+    specialization: 'Dermatologie',
+    email: 'ana.dumitrescu@clinic.ro',
+    phone: '+40721234569',
+    isActive: true
+  }
+];
+
+// Generate dummy schedules for the next 7 days
+const generateDummySchedules = (): DoctorSchedule[] => {
+  const schedules: DoctorSchedule[] = [];
+  const today = new Date();
+  
+  for (let i = 1; i <= 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    
+    dummyDoctors.forEach(doctor => {
+      const timeSlots = [
+        '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+        '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
+      ].map(time => ({
+        time,
+        available: Math.random() > 0.3, // 70% chance of being available
+        doctorId: doctor.id
+      }));
+
+      schedules.push({
+        doctorId: doctor.id,
+        date: dateStr,
+        timeSlots
+      });
+    });
+  }
+  
+  return schedules;
+};
+
 const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'appointments' | 'book' | 'reviews'>('appointments');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<ReviewDto[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [appointmentReason, setAppointmentReason] = useState<string>('');
   const [doctorSchedules, setDoctorSchedules] = useState<DoctorSchedule[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [appointmentsLoading, setAppointmentsLoading] = useState<boolean>(false);
+  const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-
-  // Dummy data for development
-  const dummyDoctors: Doctor[] = [
-    {
-      id: '1',
-      firstName: 'Dr. Maria',
-      lastName: 'Popescu',
-      specialization: 'Cardiologie',
-      email: 'maria.popescu@clinic.ro',
-      phone: '+40721234567'
-    },
-    {
-      id: '2',
-      firstName: 'Dr. Ion',
-      lastName: 'Ionescu',
-      specialization: 'Neurologie',
-      email: 'ion.ionescu@clinic.ro',
-      phone: '+40721234568'
-    },
-    {
-      id: '3',
-      firstName: 'Dr. Ana',
-      lastName: 'Dumitrescu',
-      specialization: 'Dermatologie',
-      email: 'ana.dumitrescu@clinic.ro',
-      phone: '+40721234569'
-    }
-  ];
-
-  const dummyAppointments: Appointment[] = [
-    {
-      id: '1',
-      clientId: currentUser.id,
-      clientName: currentUser.displayName,
-      doctorId: '1',
-      doctorName: 'Dr. Maria Popescu',
-      doctorSpecialization: 'Cardiologie',
-      appointmentDate: '2025-08-15',
-      appointmentTime: '10:00',
-      status: 'scheduled',
-      reason: 'Consultație de rutină',
-      createdAt: '2025-08-05T09:00:00Z'
-    },
-    {
-      id: '2',
-      clientId: currentUser.id,
-      clientName: currentUser.displayName,
-      doctorId: '2',
-      doctorName: 'Dr. Ion Ionescu',
-      doctorSpecialization: 'Neurologie',
-      appointmentDate: '2025-08-10',
-      appointmentTime: '14:30',
-      status: 'completed',
-      reason: 'Dureri de cap frecvente',
-      createdAt: '2025-08-01T11:00:00Z'
-    }
-  ];
-
-  const dummyReviews: Review[] = [
-    {
-      id: '1',
-      doctorId: '1',
-      clientId: 'other-client',
-      clientName: 'Alexandru M.',
-      rating: 5,
-      comment: 'Doctor foarte profesionist și empatic. Recomand cu încredere!',
-      createdAt: '2025-08-01T15:00:00Z',
-      appointmentId: 'app-123'
-    },
-    {
-      id: '2',
-      doctorId: '2',
-      clientId: 'other-client-2',
-      clientName: 'Raluca S.',
-      rating: 4,
-      comment: 'Consultație detaliată, explicații clare. Timpul de așteptare a fost puțin mai mare.',
-      createdAt: '2025-07-28T16:30:00Z',
-      appointmentId: 'app-124'
-    }
-  ];
-
-  // Generate dummy schedules for the next 7 days
-  const generateDummySchedules = (): DoctorSchedule[] => {
-    const schedules: DoctorSchedule[] = [];
-    const today = new Date();
-    
-    for (let i = 1; i <= 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
-      
-      dummyDoctors.forEach(doctor => {
-        const timeSlots = [
-          '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-          '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
-        ].map(time => ({
-          time,
-          available: Math.random() > 0.3, // 70% chance of being available
-          doctorId: doctor.id
-        }));
-
-        schedules.push({
-          doctorId: doctor.id,
-          date: dateStr,
-          timeSlots
-        });
-      });
-    }
-    
-    return schedules;
-  };
+  const [selectedAppointmentForReview, setSelectedAppointmentForReview] = useState<Appointment | null>(null);
+  const [reviewRating, setReviewRating] = useState<number>(0);
+  const [reviewComment, setReviewComment] = useState<string>('');
 
   useEffect(() => {
-    // Simulate API calls
-    setDoctors(dummyDoctors);
-    setAppointments(dummyAppointments);
-    setReviews(dummyReviews);
-    setDoctorSchedules(generateDummySchedules());
-  }, []);
+    // Load appointments from API and other initial data
+    const loadInitialData = async () => {
+      try {
+        setAppointmentsLoading(true);
+        // Load appointments from API
+        const appointmentsData = await getClientAppointments();
+        // Convert AppointmentResponseDto to Appointment format
+        const convertedAppointments: Appointment[] = appointmentsData.map(dto => ({
+          id: dto.id,
+          clientId: dto.clientId,
+          clientName: dto.clientName,
+          doctorId: dto.doctorId,
+          doctorName: dto.doctorName,
+          doctorSpecialization: dto.doctorSpecialization,
+          appointmentDate: dto.appointmentDate,
+          appointmentTime: dto.appointmentTime,
+          status: dto.status as 'scheduled' | 'completed' | 'cancelled' | 'no-show',
+          reason: dto.reason,
+          notes: dto.notes,
+          createdAt: dto.createdAt
+        }));
+        setAppointments(convertedAppointments);
+        
+        setDoctorSchedules(generateDummySchedules());
+      } catch (error) {
+        console.error('Error loading appointments:', error);
+        setMessage({ type: 'error', text: 'Failed to load appointments' });
+        // Set empty appointments on error
+        setAppointments([]);
+        // Set empty reviews on error
+        setReviews([]);
+        setDoctorSchedules(generateDummySchedules());
+      } finally {
+        setAppointmentsLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, [currentUser]);
+
+  // Separate effect to load doctors when book or reviews tab is active
+  useEffect(() => {
+    if (activeTab === 'book' || activeTab === 'reviews') {
+      const loadDoctors = async () => {
+        try {
+          setLoading(true);
+          const doctorsData = await getDoctors();
+          // Convert DoctorDto to Doctor format
+          const convertedDoctors: Doctor[] = doctorsData.map(dto => ({
+            id: dto.id.toString(),
+            firstName: dto.firstName,
+            lastName: dto.lastName,
+            specialization: dto.specialization,
+            email: dto.email,
+            phone: dto.phone || '',
+            isActive: dto.isActive
+          }));
+          setDoctors(convertedDoctors);
+        } catch (error) {
+          console.error('Error loading doctors:', error);
+          setMessage({ type: 'error', text: 'Failed to load doctors' });
+          // Fallback to dummy data on error
+          setDoctors(dummyDoctors);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // Only load if doctors array is empty
+      if (doctors.length === 0) {
+        loadDoctors();
+      }
+    }
+  }, [activeTab, doctors.length]);
+
+  // Function to load reviews from API
+  const loadReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      const reviewsData = await getReviews();
+      console.log(reviewsData)
+      setReviews(reviewsData);
+    } catch (error) {
+      console.error('Error loading reviews:', error);
+      setMessage({ type: 'error', text: 'Failed to load reviews' });
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  // Separate effect to load reviews only when reviews tab is active
+  useEffect(() => {
+    if (activeTab === 'reviews') {
+      loadReviews();
+    }
+  }, [activeTab]);
 
   const handleBookAppointment = async () => {
     if (!selectedDoctor || !selectedDate || !selectedTime || !appointmentReason.trim()) {
@@ -159,7 +207,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
     setLoading(true);
     
     try {
-      // Check if slot is available
+      // Check if slot is available (still using local schedule for now)
       const schedule = doctorSchedules.find(
         s => s.doctorId === selectedDoctor && s.date === selectedDate
       );
@@ -171,27 +219,36 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
         return;
       }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const doctor = doctors.find(d => d.id === selectedDoctor);
-      const newAppointment: Appointment = {
-        id: Date.now().toString(),
-        clientId: currentUser.id,
-        clientName: currentUser.displayName,
+      // Create appointment via API
+      const appointmentData: CreateAppointmentDto = {
         doctorId: selectedDoctor,
-        doctorName: `${doctor?.firstName} ${doctor?.lastName}`,
-        doctorSpecialization: doctor?.specialization || '',
         appointmentDate: selectedDate,
         appointmentTime: selectedTime,
-        status: 'scheduled',
         reason: appointmentReason,
-        createdAt: new Date().toISOString()
+        notes: ''
+      };
+
+      const createdAppointment = await createAppointment(appointmentData);
+      
+      // Convert API response to local Appointment format
+      const newAppointment: Appointment = {
+        id: createdAppointment.id,
+        clientId: createdAppointment.clientId,
+        clientName: createdAppointment.clientName,
+        doctorId: createdAppointment.doctorId,
+        doctorName: createdAppointment.doctorName,
+        doctorSpecialization: createdAppointment.doctorSpecialization,
+        appointmentDate: createdAppointment.appointmentDate,
+        appointmentTime: createdAppointment.appointmentTime,
+        status: createdAppointment.status as 'scheduled' | 'completed' | 'cancelled' | 'no-show',
+        reason: createdAppointment.reason,
+        notes: createdAppointment.notes,
+        createdAt: createdAppointment.createdAt
       };
 
       setAppointments(prev => [...prev, newAppointment]);
       
-      // Mark slot as unavailable
+      // Mark slot as unavailable in local schedule
       setDoctorSchedules(prev => prev.map(schedule => {
         if (schedule.doctorId === selectedDoctor && schedule.date === selectedDate) {
           return {
@@ -210,8 +267,13 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
       setSelectedTime('');
       setAppointmentReason('');
       setActiveTab('appointments');
-    } catch (error) {
-      setMessage({ type: 'error', text: t('booking.error') });
+    } catch (error: any) {
+      console.error('Error creating appointment:', error);
+      let errorMessage = t('booking.error');
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -235,9 +297,61 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
     return Math.round((sum / doctorReviews.length) * 10) / 10;
   };
 
-  const renderStars = (rating: number) => {
+  const handleLeaveReview = (appointment: Appointment) => {
+    setSelectedAppointmentForReview(appointment);
+    setReviewRating(0);
+    setReviewComment('');
+    setActiveTab('reviews');
+  };
+
+  const handleSubmitReview = async () => {
+    if (!selectedAppointmentForReview || reviewRating === 0) {
+      setMessage({ type: 'error', text: 'Te rugăm să selectezi o evaluare.' });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Create review via API
+      const reviewData: CreateReviewDto = {
+        doctorId: selectedAppointmentForReview.doctorId,
+        appointmentId: selectedAppointmentForReview.id,
+        rating: reviewRating,
+        comment: reviewComment.trim()
+      };
+
+      await createReview(reviewData);
+      
+      // Reload all reviews from database to show updated data
+      await loadReviews();
+      setMessage({ type: 'success', text: 'Recenzia a fost trimisă cu succes!' });
+      
+      // Reset form
+      setSelectedAppointmentForReview(null);
+      setReviewRating(0);
+      setReviewComment('');
+      
+    } catch (error: any) {
+      console.error('Error submitting review:', error);
+      let errorMessage = 'Eroare la trimiterea recenziei.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      setMessage({ type: 'error', text: errorMessage });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderStars = (rating: number, interactive: boolean = false, onStarClick?: (rating: number) => void) => {
     return Array.from({ length: 5 }, (_, i) => (
-      <span key={i} className={`star ${i < rating ? 'filled' : ''}`}>
+      <span 
+        key={i} 
+        className={`star ${i < rating ? 'filled' : ''} ${interactive ? 'interactive' : ''}`}
+        onClick={interactive && onStarClick ? () => onStarClick(i + 1) : undefined}
+        style={interactive ? { cursor: 'pointer' } : {}}
+      >
         ⭐
       </span>
     ));
@@ -246,7 +360,9 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
   const renderAppointments = () => (
     <div className="appointments-section">
       <h3>{t('client.myAppointments')}</h3>
-      {appointments.length === 0 ? (
+      {appointmentsLoading ? (
+        <div className="loading">Loading appointments...</div>
+      ) : appointments.length === 0 ? (
         <p className="no-data">Nu aveți programări încă.</p>
       ) : (
         <div className="appointments-list">
@@ -266,9 +382,9 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
                 <p><strong>Ora:</strong> {appointment.appointmentTime}</p>
                 <p><strong>Motiv:</strong> {appointment.reason}</p>
               </div>
-              {appointment.status === 'completed' && (
-                <button className="review-btn" onClick={() => setActiveTab('reviews')}>
-                  {t('client.leaveReview')}
+              {(appointment.status === 'completed' || appointment.status === 'scheduled') && (
+                <button className="review-btn" onClick={() => handleLeaveReview(appointment)}>
+                  {appointment.status === 'completed' ? t('client.leaveReview') : 'Leave Review'}
                 </button>
               )}
             </div>
@@ -371,8 +487,57 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
     <div className="reviews-section">
       <h3>{t('client.doctorReviews')}</h3>
       
+      {reviewsLoading && <div className="loading-message">Loading reviews...</div>}
+      
+      {/* Review Form - shown when user clicks "Leave Review" */}
+      {selectedAppointmentForReview && (
+        <div className="review-form-section">
+          <h4>Lasă o recenzie pentru {selectedAppointmentForReview.doctorName}</h4>
+          <div className="review-form">
+            <div className="form-group">
+              <label>Evaluare:</label>
+              <div className="star-rating">
+                {renderStars(reviewRating, true, setReviewRating)}
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label>Comentariu:</label>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Spune-ne despre experiența ta cu doctorul..."
+                rows={4}
+              />
+            </div>
+            
+            <div className="form-actions">
+              <button 
+                className="submit-review-btn"
+                onClick={handleSubmitReview}
+                disabled={loading || reviewRating === 0}
+              >
+                {loading ? t('common.loading') : 'Trimite Recenzia'}
+              </button>
+              <button 
+                className="cancel-review-btn"
+                onClick={() => {
+                  setSelectedAppointmentForReview(null);
+                  setReviewRating(0);
+                  setReviewComment('');
+                }}
+              >
+                Anulează
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Existing Reviews Display */}
       {doctors.map(doctor => {
         const doctorReviews = reviews.filter(r => r.doctorId === doctor.id);
+        console.log(`Doctor ${doctor.id} reviews:`, doctorReviews);
         const avgRating = getAverageRating(doctor.id);
         
         return (
@@ -422,7 +587,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
         <div className="header-right">
           <span className="welcome-user">Bun venit, {currentUser.displayName}!</span>
           <LanguageSwitcher />
-          <button className="logout-btn" onClick={onLogout}>
+          <button className="logout-btn-client-dashboard" onClick={onLogout}>
             {t('dashboard.logout')}
           </button>
         </div>

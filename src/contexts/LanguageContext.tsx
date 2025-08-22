@@ -42,6 +42,7 @@ type TranslationKeys = {
   'users.role': string;
   'users.status': string;
   'users.createdAt': string;
+  'users.dateOfBirth': string;
   'users.active': string;
   'users.inactive': string;
   'users.client': string;
@@ -133,6 +134,7 @@ const translations: Record<Language, TranslationKeys> = {
     'users.role': 'Rol',
     'users.status': 'Status',
     'users.createdAt': 'Creat la',
+    'users.dateOfBirth': 'Data Nașterii',
     'users.active': 'Activ',
     'users.inactive': 'Inactiv',
     'users.client': 'Client',
@@ -221,6 +223,7 @@ const translations: Record<Language, TranslationKeys> = {
     'users.role': 'Role',
     'users.status': 'Status',
     'users.createdAt': 'Created At',
+    'users.dateOfBirth': 'Date of Birth',
     'users.active': 'Active',
     'users.inactive': 'Inactive',
     'users.client': 'Client',

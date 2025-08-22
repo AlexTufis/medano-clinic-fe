@@ -6,6 +6,7 @@ import ClientDashboard from './components/ClientDashboard';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { User } from './types/dto';
+import TokenStorage from './utils/tokenStorage';
 import './App.css';
 
 type ViewType = 'login' | 'register' | 'dashboard';
@@ -15,35 +16,19 @@ const AppContent: FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('login');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // Dummy users for testing role-based access
-  const dummyUsers: User[] = [
-    {
-      id: '1',
-      userName: 'admin@clinic.ro',
-      email: 'admin@clinic.ro',
-      firstName: 'Admin',
+  const handleLogin = (email: string, role: string) => {
+    // Create user object based on API response
+    const user: User = {
+      id: Date.now().toString(), // Temporary ID until proper user data comes from API
+      userName: email,
+      email: email,
+      firstName: 'User', // These would come from API in real implementation
       lastName: 'User',
-      displayName: 'Administrator',
-      role: 'admin',
-      createdAt: '2025-01-01T00:00:00Z',
+      displayName: 'User',
+      role: role as "Admin" | "Client",
+      createdAt: new Date().toISOString(),
       isActive: true
-    },
-    {
-      id: '2',
-      userName: 'client@clinic.ro',
-      email: 'client@clinic.ro',
-      firstName: 'John',
-      lastName: 'Doe',
-      displayName: 'John Doe',
-      role: 'client',
-      createdAt: '2025-01-01T00:00:00Z',
-      isActive: true
-    }
-  ];
-
-  const handleLogin = (email: string) => {
-    // In a real app, this would come from the login API response
-    const user = dummyUsers.find(u => u.email === email) || dummyUsers[1]; // Default to client
+    };
     setCurrentUser(user);
     setCurrentView('dashboard');
   };
@@ -53,6 +38,7 @@ const AppContent: FC = () => {
   };
 
   const handleLogout = () => {
+    TokenStorage.clearToken(); // Clear the authentication token
     setCurrentUser(null);
     setCurrentView('login');
   };
@@ -99,13 +85,11 @@ const AppContent: FC = () => {
         if (!currentUser) return null;
         
         // Role-based dashboard rendering
-        if (currentUser.role === 'admin') {
+        if (currentUser.role === 'Admin') {
           return <AdminDashboard onLogout={handleLogout} />;
-        } else if (currentUser.role === 'client') {
+        } else {
           return <ClientDashboard onLogout={handleLogout} currentUser={currentUser} />;
         }
-        
-        return null;
       default:
         return null;
     }
