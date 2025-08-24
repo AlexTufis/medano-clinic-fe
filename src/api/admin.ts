@@ -1,4 +1,8 @@
-import { AdminDashboardDto, UserDto } from "../types/dto";
+import {
+  AdminDashboardDto,
+  UserDto,
+  AppointmentResponseDto,
+} from "../types/dto";
 import apiClient from "./apiClient";
 
 export async function getAdminDashboardStats(): Promise<AdminDashboardDto> {
@@ -9,4 +13,16 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardDto> {
 export async function getAllUsers(): Promise<UserDto[]> {
   const response = await apiClient.get<UserDto[]>("/Admin/users");
   return response.data;
+}
+
+export async function getAllAppointments(): Promise<AppointmentResponseDto[]> {
+  try {
+    const response = await apiClient.get<AppointmentResponseDto[]>(
+      "/Admin/getAppointments"
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    throw error;
+  }
 }

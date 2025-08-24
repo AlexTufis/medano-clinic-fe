@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { AdminDashboardDto, UserDto } from '../types/dto';
-import { getAdminDashboardStats, getAllUsers } from '../api/admin';
+import { AdminDashboardDto, UserDto, AppointmentResponseDto } from '../types/dto';
+import { getAdminDashboardStats, getAllUsers, getAllAppointments } from '../api/admin';
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import './AdminDashboard.css';
@@ -13,8 +13,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const { t } = useLanguage();
   const [dashboardData, setDashboardData] = useState<AdminDashboardDto | null>(null);
   const [users, setUsers] = useState<UserDto[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentResponseDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [usersLoading, setUsersLoading] = useState<boolean>(false);
+  const [appointmentsLoading, setAppointmentsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'appointments'>('overview');
 
@@ -54,6 +56,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     };
 
     fetchUsers();
+  }, [activeTab]);
+
+  // Fetch appointments when appointments tab is activated
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      if (activeTab === 'appointments') {
+        try {
+          setAppointmentsLoading(true);
+          const appointmentsData = await getAllAppointments();
+          setAppointments(appointmentsData);
+        } catch (err) {
+          console.error('Error fetching appointments:', err);
+          setError('Failed to load appointments data');
+        } finally {
+          setAppointmentsLoading(false);
+        }
+      }
+    };
+
+    fetchAppointments();
   }, [activeTab]);
 
   const renderOverview = () => {
@@ -214,18 +236,70 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     );
   };
 
-  const renderAppointments = () => (
-    <div className="appointments-content">
-      <div className="content-header">
-        <h3>{t('dashboard.appointments')}</h3>
-        <p>Appointment management functionality will be available soon.</p>
-        <div className="appointment-stats">
-          <span>{t('metrics.todaysAppointments')}: {dashboardData?.todayAppointments || 0}</span>
-          <span>{t('metrics.thisWeek')}: {dashboardData?.weeklyAppointments || 0}</span>
+  const renderAppointments = () => {
+    if (appointmentsLoading) {
+      return <div className="loading">Loading appointments data...</div>;
+    }
+
+    // Group appointments by status
+    const appointmentsByStatus = {
+      scheduled: appointments.filter(apt => apt.status === 'scheduled'),
+      completed: appointments.filter(apt => apt.status === 'completed'),
+      cancelled: appointments.filter(apt => apt.status === 'cancelled'),
+      'no-show': appointments.filter(apt => apt.status === 'no-show')
+    };
+
+    return (
+      <div className="appointments-content">
+        <div className="content-header">
+          <h3>{t('dashboard.appointments')}</h3>
+          <div className="appointment-stats">
+            <span>Total: {appointments.length}</span>
+            <span>Scheduled: {appointmentsByStatus.scheduled.length}</span>
+            <span>Completed: {appointmentsByStatus.completed.length}</span>
+            <span>Cancelled: {appointmentsByStatus.cancelled.length}</span>
+            <span>No-show: {appointmentsByStatus['no-show'].length}</span>
+          </div>
+        </div>
+
+        {/* Appointments Table */}
+        <div className="appointments-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Client</th>
+                <th>Doctor</th>
+                <th>Reason</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {appointments.map(appointment => (
+                <tr key={appointment.id}>
+                  <td>{new Date(appointment.appointmentDate).toLocaleDateString()}</td>
+                  <td>{appointment.appointmentTime}</td>
+                  <td>{appointment.clientName}</td>
+                  <td>
+                    {appointment.doctorName}
+                    <br />
+                    <small style={{ color: '#666' }}>{appointment.doctorSpecialization}</small>
+                  </td>
+                  <td>{appointment.reason}</td>
+                  <td>
+                    <span className={`status-badge status-${appointment.status}`}>
+                      {appointment.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="admin-dashboard">

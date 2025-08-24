@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import Toast from './Toast';
 import { 
   User, 
   Doctor, 
@@ -95,6 +96,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
   const [appointmentsLoading, setAppointmentsLoading] = useState<boolean>(false);
   const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info', message: string, isVisible: boolean }>({ type: 'info', message: '', isVisible: false });
   const [selectedAppointmentForReview, setSelectedAppointmentForReview] = useState<Appointment | null>(null);
   const [reviewRating, setReviewRating] = useState<number>(0);
   const [reviewComment, setReviewComment] = useState<string>('');
@@ -191,6 +193,11 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
     }
   };
 
+  // Helper function to show toast notifications
+  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
+    setToast({ type, message, isVisible: true });
+  };
+
   // Separate effect to load reviews only when reviews tab is active
   useEffect(() => {
     if (activeTab === 'reviews') {
@@ -261,7 +268,8 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
         return schedule;
       }));
 
-      setMessage({ type: 'success', text: t('booking.success') });
+      // Show success toast notification
+      showToast('success', t('booking.success'));
       setSelectedDoctor('');
       setSelectedDate('');
       setSelectedTime('');
@@ -325,7 +333,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
       
       // Reload all reviews from database to show updated data
       await loadReviews();
-      setMessage({ type: 'success', text: 'Recenzia a fost trimisă cu succes!' });
+      showToast('success', 'Recenzia a fost trimisă cu succes!');
       
       // Reset form
       setSelectedAppointmentForReview(null);
@@ -619,6 +627,14 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
         {activeTab === 'book' && renderBookAppointment()}
         {activeTab === 'reviews' && renderReviews()}
       </div>
+
+      {/* Toast notifications */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+      />
     </div>
   );
 };
