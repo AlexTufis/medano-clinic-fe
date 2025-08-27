@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import Toast from './Toast';
+import LoadingSpinner from './LoadingSpinner';
 import { 
   User, 
   Doctor, 
@@ -294,6 +295,22 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
       
       // Reload all reviews from database to show updated data
       await loadReviews();
+      
+      // Reload doctors to refresh average ratings and review counts
+      const doctorsData = await getDoctors();
+      const convertedDoctors: Doctor[] = doctorsData.map(dto => ({
+        id: dto.id.toString(),
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        specialization: dto.specialization,
+        email: dto.email,
+        phone: dto.phone || '',
+        isActive: dto.isActive,
+        averageRating: dto.averageRating,
+        totalReviews: dto.totalReviews
+      }));
+      setDoctors(convertedDoctors);
+      
       showToast('success', 'Recenzia a fost trimisă cu succes!');
       
       // Reset form
@@ -317,11 +334,11 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
     return Array.from({ length: 5 }, (_, i) => (
       <span 
         key={i} 
-        className={`star ${i < rating ? 'filled' : ''} ${interactive ? 'interactive' : ''}`}
+        className={`star ${i < rating ? 'filled' : 'empty'} ${interactive ? 'interactive' : ''}`}
         onClick={interactive && onStarClick ? () => onStarClick(i + 1) : undefined}
         style={interactive ? { cursor: 'pointer' } : {}}
       >
-        ⭐
+        {i < rating ? '★' : '☆'}
       </span>
     ));
   };
@@ -330,7 +347,10 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
     <div className="appointments-section">
       <h3>{t('client.myAppointments')}</h3>
       {appointmentsLoading ? (
-        <div className="loading">Loading appointments...</div>
+        <div className="loading-container" style={{ textAlign: 'center', padding: '20px' }}>
+          <LoadingSpinner size="medium" />
+          <p>{t('client.loadingAppointments')}</p>
+        </div>
       ) : appointments.length === 0 ? (
         <p className="no-data">Nu aveți programări încă.</p>
       ) : (
@@ -351,7 +371,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
                 <p><strong>Ora:</strong> {appointment.appointmentTime}</p>
                 <p><strong>Motiv:</strong> {appointment.reason}</p>
               </div>
-              {(appointment.status === 'completed' || appointment.status === 'scheduled') && (
+              {appointment.status === 'completed' && (
                 <button className="review-btn" onClick={() => handleLeaveReview(appointment)}>
                   {t('client.leaveReview')}
                 </button>
@@ -441,11 +461,18 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
 
         <div className="form-actions">
           <button 
-            className="book-btn"
+            className="book-btn btn-loading"
             onClick={handleBookAppointment}
             disabled={loading || !selectedDoctor || !selectedDate || !selectedTime || !appointmentReason.trim()}
           >
-            {loading ? t('common.loading') : t('booking.book')}
+            {loading ? (
+              <>
+                <LoadingSpinner size="small" />
+                {t('common.loading')}
+              </>
+            ) : (
+              t('booking.book')
+            )}
           </button>
         </div>
       </div>
@@ -456,7 +483,12 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
     <div className="reviews-section">
       <h3>{t('client.doctorReviews')}</h3>
       
-      {reviewsLoading && <div className="loading-message">Loading reviews...</div>}
+      {reviewsLoading && (
+        <div className="loading-container" style={{ textAlign: 'center', padding: '20px' }}>
+          <LoadingSpinner size="medium" />
+          <p>{t('client.loadingReviews')}</p>
+        </div>
+      )}
       
       {/* Review Form - shown when user clicks "Leave Review" */}
       {selectedAppointmentForReview && (
@@ -482,11 +514,18 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
             
             <div className="form-actions">
               <button 
-                className="submit-review-btn"
+                className="submit-review-btn btn-loading"
                 onClick={handleSubmitReview}
                 disabled={loading || reviewRating === 0}
               >
-                {loading ? t('common.loading') : 'Trimite Recenzia'}
+                {loading ? (
+                  <>
+                    <LoadingSpinner size="small" />
+                    {t('common.loading')}
+                  </>
+                ) : (
+                  'Trimite Recenzia'
+                )}
               </button>
               <button 
                 className="cancel-review-btn"

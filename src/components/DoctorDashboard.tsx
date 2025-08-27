@@ -4,6 +4,7 @@ import { getDoctorReviews, getDoctorAppointments } from '../api/doctor';
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import Toast from './Toast';
+import LoadingSpinner from './LoadingSpinner';
 import './DoctorDashboard.css';
 
 interface DoctorDashboardProps {
@@ -125,7 +126,12 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout, currentUser
 
   const renderAppointments = () => {
     if (appointmentsLoading) {
-      return <div className="loading">Loading appointments data...</div>;
+      return (
+        <div className="loading-container" style={{ textAlign: 'center', padding: '20px' }}>
+          <LoadingSpinner size="medium" />
+          <p>{t('doctor.loadingAppointments')}</p>
+        </div>
+      );
     }
 
     if (appointments.length === 0) {
@@ -192,7 +198,12 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout, currentUser
 
   const renderReviews = () => {
     if (reviewsLoading) {
-      return <div className="loading">Loading reviews data...</div>;
+      return (
+        <div className="loading-container" style={{ textAlign: 'center', padding: '20px' }}>
+          <LoadingSpinner size="medium" />
+          <p>{t('doctor.loadingReviews')}</p>
+        </div>
+      );
     }
 
     if (reviews.length === 0) {

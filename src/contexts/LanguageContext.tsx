@@ -18,6 +18,7 @@ type TranslationKeys = {
   'dashboard.users': string;
   'dashboard.appointments': string;
   'dashboard.logout': string;
+  'dashboard.loadingData': string;
   
   // Metrics
   'metrics.totalUsers': string;
@@ -48,6 +49,7 @@ type TranslationKeys = {
   'users.client': string;
   'users.admin': string;
   'users.doctor': string;
+  'users.loadingUsers': string;
   
   // Appointments Table
   'appointments.patient': string;
@@ -56,6 +58,7 @@ type TranslationKeys = {
   'appointments.time': string;
   'appointments.status': string;
   'appointments.notes': string;
+  'appointments.loadingAppointments': string;
   
   // Auth
   'auth.login': string;
@@ -96,6 +99,8 @@ type TranslationKeys = {
   'client.doctorReviews': string;
   'client.leaveReview': string;
   'client.doctorRating': string;
+  'client.loadingAppointments': string;
+  'client.loadingReviews': string;
   
   // Doctor Dashboard
   'doctor.dashboard.title': string;
@@ -105,6 +110,8 @@ type TranslationKeys = {
   'doctor.myReviews': string;
   'doctor.noAppointments': string;
   'doctor.noReviews': string;
+  'doctor.loadingAppointments': string;
+  'doctor.loadingReviews': string;
   'doctor.specialization': string;
   'doctor.specializationPlaceholder': string;
   'doctor.phone': string;
@@ -141,6 +148,7 @@ const translations: Record<Language, TranslationKeys> = {
     'dashboard.users': 'Utilizatori',
     'dashboard.appointments': 'Programări',
     'dashboard.logout': 'Deconectare',
+    'dashboard.loadingData': 'Se încarcă datele...',
     
     // Metrics
     'metrics.totalUsers': 'Total Utilizatori',
@@ -171,6 +179,7 @@ const translations: Record<Language, TranslationKeys> = {
     'users.client': 'Client',
     'users.admin': 'Administrator',
     'users.doctor': 'Doctor',
+    'users.loadingUsers': 'Se încarcă utilizatorii...',
     
     // Appointments Table
     'appointments.patient': 'Pacient',
@@ -179,6 +188,7 @@ const translations: Record<Language, TranslationKeys> = {
     'appointments.time': 'Ora',
     'appointments.status': 'Status',
     'appointments.notes': 'Notițe',
+    'appointments.loadingAppointments': 'Se încarcă programările...',
     
     // Auth
     'auth.login': 'Conectare',
@@ -219,6 +229,8 @@ const translations: Record<Language, TranslationKeys> = {
     'client.doctorReviews': 'Recenzii Doctori',
     'client.leaveReview': 'Lasă o Recenzie',
     'client.doctorRating': 'Evaluarea Doctorului',
+    'client.loadingAppointments': 'Se încarcă programările...',
+    'client.loadingReviews': 'Se încarcă recenziile...',
     
     // Doctor Dashboard
     'doctor.dashboard.title': 'Panou Doctor',
@@ -228,6 +240,8 @@ const translations: Record<Language, TranslationKeys> = {
     'doctor.myReviews': 'Recenziile Mele',
     'doctor.noAppointments': 'Nu aveți programări',
     'doctor.noReviews': 'Nu aveți recenzii',
+    'doctor.loadingAppointments': 'Se încarcă programările...',
+    'doctor.loadingReviews': 'Se încarcă recenziile...',
     'doctor.specialization': 'Specializarea',
     'doctor.specializationPlaceholder': 'Ex: Cardiologie, Dermatologie, etc.',
     'doctor.phone': 'Telefon',
@@ -261,6 +275,7 @@ const translations: Record<Language, TranslationKeys> = {
     'dashboard.users': 'Users',
     'dashboard.appointments': 'Appointments',
     'dashboard.logout': 'Logout',
+    'dashboard.loadingData': 'Loading data...',
     
     // Metrics
     'metrics.totalUsers': 'Total Users',
@@ -291,6 +306,7 @@ const translations: Record<Language, TranslationKeys> = {
     'users.client': 'Client',
     'users.admin': 'Administrator',
     'users.doctor': 'Doctor',
+    'users.loadingUsers': 'Loading users...',
     
     // Appointments Table
     'appointments.patient': 'Patient',
@@ -299,6 +315,7 @@ const translations: Record<Language, TranslationKeys> = {
     'appointments.time': 'Time',
     'appointments.status': 'Status',
     'appointments.notes': 'Notes',
+    'appointments.loadingAppointments': 'Loading appointments...',
     
     // Auth
     'auth.login': 'Login',
@@ -339,6 +356,8 @@ const translations: Record<Language, TranslationKeys> = {
     'client.doctorReviews': 'Doctor Reviews',
     'client.leaveReview': 'Leave Review',
     'client.doctorRating': 'Doctor Rating',
+    'client.loadingAppointments': 'Loading appointments...',
+    'client.loadingReviews': 'Loading reviews...',
     
     // Doctor Dashboard
     'doctor.dashboard.title': 'Doctor Dashboard',
@@ -348,6 +367,8 @@ const translations: Record<Language, TranslationKeys> = {
     'doctor.myReviews': 'My Reviews',
     'doctor.noAppointments': 'No appointments found',
     'doctor.noReviews': 'No reviews yet',
+    'doctor.loadingAppointments': 'Loading appointments...',
+    'doctor.loadingReviews': 'Loading reviews...',
     'doctor.specialization': 'Specialization',
     'doctor.specializationPlaceholder': 'e.g. Cardiology, Dermatology, etc.',
     'doctor.phone': 'Phone',

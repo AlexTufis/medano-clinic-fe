@@ -4,6 +4,7 @@ import { getAdminDashboardStats, getAllUsers, getAllAppointments, updateUserRole
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import Toast from './Toast';
+import LoadingSpinner from './LoadingSpinner';
 import './AdminDashboard.css';
 
 interface AdminDashboardProps {
@@ -18,6 +19,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [usersLoading, setUsersLoading] = useState<boolean>(false);
   const [appointmentsLoading, setAppointmentsLoading] = useState<boolean>(false);
+  const [roleUpdateLoading, setRoleUpdateLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'appointments'>('overview');
   
@@ -146,6 +148,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     }
     
     try {
+      setRoleUpdateLoading(true);
       // Call the API to update user role
       const updateDto: UpdateUserRoleDto = {
         userId: selectedUser.id,
@@ -181,6 +184,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       console.error('Error updating user role:', error);
       // Show error toast
       showToast(t('userManagement.roleUpdateError'), 'error');
+    } finally {
+      setRoleUpdateLoading(false);
     }
   };
 
@@ -195,7 +200,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   const renderOverview = () => {
     if (loading) {
-      return <div className="loading">Loading dashboard data...</div>;
+      return (
+        <div className="loading-container" style={{ textAlign: 'center', padding: '40px' }}>
+          <LoadingSpinner size="large" />
+          <p>{t('dashboard.loadingData')}</p>
+        </div>
+      );
     }
 
     if (error) {
@@ -301,7 +311,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   const renderUsers = () => {
     if (usersLoading) {
-      return <div className="loading">Loading users data...</div>;
+      return (
+        <div className="loading-container" style={{ textAlign: 'center', padding: '40px' }}>
+          <LoadingSpinner size="medium" />
+          <p>{t('users.loadingUsers')}</p>
+        </div>
+      );
     }
 
     return (
@@ -363,7 +378,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   const renderAppointments = () => {
     if (appointmentsLoading) {
-      return <div className="loading">Loading appointments data...</div>;
+      return (
+        <div className="loading-container" style={{ textAlign: 'center', padding: '40px' }}>
+          <LoadingSpinner size="medium" />
+          <p>{t('appointments.loadingAppointments')}</p>
+        </div>
+      );
     }
 
     // Group appointments by status
@@ -508,15 +528,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               {t('common.cancel')}
             </button>
             <button 
-              className="btn-confirm" 
+              className="btn-confirm btn-loading" 
               onClick={handleRoleChange}
               disabled={
+                roleUpdateLoading ||
                 !newRole || 
                 newRole === selectedUser.role || 
                 (newRole === 'Doctor' && !specialization.trim())
               }
             >
-              {t('userManagement.confirmChange')}
+              {roleUpdateLoading ? (
+                <>
+                  <LoadingSpinner size="small" />
+                  {t('common.loading')}
+                </>
+              ) : (
+                t('userManagement.confirmChange')
+              )}
             </button>
           </div>
         </div>

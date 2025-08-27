@@ -410,13 +410,16 @@
 }
 
 .star {
-  font-size: 1rem;
-  filter: grayscale(100%);
-  transition: filter 0.2s;
+  font-size: 1.1rem;
+  transition: color 0.2s ease;
 }
 
 .star.filled {
-  filter: grayscale(0%);
+  color: #ffd700;
+}
+
+.star.empty {
+  color: #ddd;
 }
 
 /* Responsive Design */
