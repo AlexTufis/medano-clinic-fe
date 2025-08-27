@@ -6,80 +6,18 @@ import {
   User, 
   Doctor, 
   Appointment, 
-  DoctorSchedule, 
   CreateAppointmentDto,
   CreateReviewDto,
-  ReviewDto 
+  ReviewDto,
+  AppointmentHourDto
 } from '../types/dto';
-import { getDoctors, createAppointment, getClientAppointments, createReview, getReviews } from '../api/client';
+import { getDoctors, createAppointment, getClientAppointments, createReview, getReviews, getDoctorAppointmentHoursByDay } from '../api/client';
 import './ClientDashboard.css';
 
 interface ClientDashboardProps {
   onLogout: () => void;
   currentUser: User; // In a real app, this would come from authentication
 }
-
-// Dummy data for development
-const dummyDoctors: Doctor[] = [
-  {
-    id: '1',
-    firstName: 'Dr. Maria',
-    lastName: 'Popescu',
-    specialization: 'Cardiologie',
-    email: 'maria.popescu@clinic.ro',
-    phone: '+40721234567',
-    isActive: true
-  },
-  {
-    id: '2',
-    firstName: 'Dr. Ion',
-    lastName: 'Ionescu',
-    specialization: 'Neurologie',
-    email: 'ion.ionescu@clinic.ro',
-    phone: '+40721234568',
-    isActive: true
-  },
-  {
-    id: '3',
-    firstName: 'Dr. Ana',
-    lastName: 'Dumitrescu',
-    specialization: 'Dermatologie',
-    email: 'ana.dumitrescu@clinic.ro',
-    phone: '+40721234569',
-    isActive: true
-  }
-];
-
-// Generate dummy schedules for the next 7 days
-const generateDummySchedules = (): DoctorSchedule[] => {
-  const schedules: DoctorSchedule[] = [];
-  const today = new Date();
-  
-  for (let i = 1; i <= 7; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0];
-    
-    dummyDoctors.forEach(doctor => {
-      const timeSlots = [
-        '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-        '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
-      ].map(time => ({
-        time,
-        available: Math.random() > 0.3, // 70% chance of being available
-        doctorId: doctor.id
-      }));
-
-      schedules.push({
-        doctorId: doctor.id,
-        date: dateStr,
-        timeSlots
-      });
-    });
-  }
-  
-  return schedules;
-};
 
 const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser }) => {
   const { t } = useLanguage();
@@ -91,7 +29,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [appointmentReason, setAppointmentReason] = useState<string>('');
-  const [doctorSchedules, setDoctorSchedules] = useState<DoctorSchedule[]>([]);
+  const [appointmentHours, setAppointmentHours] = useState<AppointmentHourDto[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [appointmentsLoading, setAppointmentsLoading] = useState<boolean>(false);
   const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
@@ -125,7 +63,6 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
         }));
         setAppointments(convertedAppointments);
         
-        setDoctorSchedules(generateDummySchedules());
       } catch (error) {
         console.error('Error loading appointments:', error);
         setMessage({ type: 'error', text: 'Failed to load appointments' });
@@ -133,7 +70,6 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
         setAppointments([]);
         // Set empty reviews on error
         setReviews([]);
-        setDoctorSchedules(generateDummySchedules());
       } finally {
         setAppointmentsLoading(false);
       }
@@ -157,14 +93,16 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
             specialization: dto.specialization,
             email: dto.email,
             phone: dto.phone || '',
-            isActive: dto.isActive
+            isActive: dto.isActive,
+            averageRating: dto.averageRating,
+            totalReviews: dto.totalReviews
           }));
           setDoctors(convertedDoctors);
         } catch (error) {
           console.error('Error loading doctors:', error);
           setMessage({ type: 'error', text: 'Failed to load doctors' });
-          // Fallback to dummy data on error
-          setDoctors(dummyDoctors);
+          // Set empty doctors array on error
+          setDoctors([]);
         } finally {
           setLoading(false);
         }
@@ -176,6 +114,37 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
       }
     }
   }, [activeTab, doctors.length]);
+
+  // Load appointment hours when doctor and date are selected
+  useEffect(() => {
+    if (selectedDoctor && selectedDate) {
+      const loadAppointmentHours = async () => {
+        try {
+          setLoading(true);
+          const date = new Date(selectedDate);
+          const dayOfWeek = getDayOfWeekString(date);
+          const hours = await getDoctorAppointmentHoursByDay(selectedDoctor, dayOfWeek);
+          setAppointmentHours(hours);
+        } catch (error) {
+          console.error('Error loading appointment hours:', error);
+          setMessage({ type: 'error', text: 'Failed to load appointment hours' });
+          setAppointmentHours([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      loadAppointmentHours();
+    } else {
+      setAppointmentHours([]);
+    }
+  }, [selectedDoctor, selectedDate]);
+
+  // Helper function to get day of week as string
+  const getDayOfWeekString = (date: Date): string => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[date.getDay()];
+  };
 
   // Function to load reviews from API
   const loadReviews = async () => {
@@ -205,27 +174,15 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
     }
   }, [activeTab]);
 
-  const handleBookAppointment = async () => {
+    const handleBookAppointment = async () => {
     if (!selectedDoctor || !selectedDate || !selectedTime || !appointmentReason.trim()) {
-      setMessage({ type: 'error', text: 'Te rugăm să completezi toate câmpurile.' });
+      setMessage({ type: 'error', text: 'Please fill in all required fields' });
       return;
     }
 
     setLoading(true);
     
     try {
-      // Check if slot is available (still using local schedule for now)
-      const schedule = doctorSchedules.find(
-        s => s.doctorId === selectedDoctor && s.date === selectedDate
-      );
-      const timeSlot = schedule?.timeSlots.find(ts => ts.time === selectedTime);
-      
-      if (!timeSlot?.available) {
-        setMessage({ type: 'error', text: t('booking.slotTaken') });
-        setLoading(false);
-        return;
-      }
-
       // Create appointment via API
       const appointmentData: CreateAppointmentDto = {
         doctorId: selectedDoctor,
@@ -255,18 +212,13 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
 
       setAppointments(prev => [...prev, newAppointment]);
       
-      // Mark slot as unavailable in local schedule
-      setDoctorSchedules(prev => prev.map(schedule => {
-        if (schedule.doctorId === selectedDoctor && schedule.date === selectedDate) {
-          return {
-            ...schedule,
-            timeSlots: schedule.timeSlots.map(slot => 
-              slot.time === selectedTime ? { ...slot, available: false } : slot
-            )
-          };
-        }
-        return schedule;
-      }));
+      // Refresh appointment hours to show updated availability
+      if (selectedDoctor && selectedDate) {
+        const date = new Date(selectedDate);
+        const dayOfWeek = getDayOfWeekString(date);
+        const hours = await getDoctorAppointmentHoursByDay(selectedDoctor, dayOfWeek);
+        setAppointmentHours(hours);
+      }
 
       // Show success toast notification
       showToast('success', t('booking.success'));
@@ -290,19 +242,28 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
   const getAvailableTimeSlots = () => {
     if (!selectedDoctor || !selectedDate) return [];
     
-    const schedule = doctorSchedules.find(
-      s => s.doctorId === selectedDoctor && s.date === selectedDate
-    );
-    
-    return schedule?.timeSlots.filter(slot => slot.available) || [];
+    // Return only active appointment hours that are available
+    return appointmentHours
+      .filter(hour => hour.isActive)
+      .map(hour => ({
+        time: hour.hour,
+        available: true, // The backend determines availability
+        doctorId: hour.doctorId
+      }));
+  };
+
+  const getDoctorById = (doctorId: string): Doctor | undefined => {
+    return doctors.find(doctor => doctor.id === doctorId);
   };
 
   const getAverageRating = (doctorId: string): number => {
-    const doctorReviews = reviews.filter(r => r.doctorId === doctorId);
-    if (doctorReviews.length === 0) return 0;
-    
-    const sum = doctorReviews.reduce((acc, review) => acc + review.rating, 0);
-    return Math.round((sum / doctorReviews.length) * 10) / 10;
+    const doctor = getDoctorById(doctorId);
+    return doctor?.averageRating || 0;
+  };
+
+  const getTotalReviews = (doctorId: string): number => {
+    const doctor = getDoctorById(doctorId);
+    return doctor?.totalReviews || 0;
   };
 
   const handleLeaveReview = (appointment: Appointment) => {
@@ -392,7 +353,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
               </div>
               {(appointment.status === 'completed' || appointment.status === 'scheduled') && (
                 <button className="review-btn" onClick={() => handleLeaveReview(appointment)}>
-                  {appointment.status === 'completed' ? t('client.leaveReview') : 'Leave Review'}
+                  {t('client.leaveReview')}
                 </button>
               )}
             </div>
@@ -433,7 +394,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
 
         {selectedDoctor && (
           <div className="doctor-info">
-            <h4>Evaluare Doctor: {getAverageRating(selectedDoctor).toFixed(1)} {renderStars(Math.round(getAverageRating(selectedDoctor)))}</h4>
+            <h4>{t('client.doctorRating')}: {getAverageRating(selectedDoctor).toFixed(1)} {renderStars(Math.round(getAverageRating(selectedDoctor)))} ({getTotalReviews(selectedDoctor)} {getTotalReviews(selectedDoctor) === 1 ? t('reviews.reviewSingular') : t('reviews.reviewPlural')})</h4>
           </div>
         )}
 
@@ -547,6 +508,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
         const doctorReviews = reviews.filter(r => r.doctorId === doctor.id);
         console.log(`Doctor ${doctor.id} reviews:`, doctorReviews);
         const avgRating = getAverageRating(doctor.id);
+        const totalReviews = getTotalReviews(doctor.id);
         
         return (
           <div key={doctor.id} className="doctor-reviews">
@@ -556,9 +518,9 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({ onLogout, currentUser
               <div className="rating-summary">
                 {avgRating > 0 ? (
                   <>
-                    <span className="avg-rating">{avgRating}</span>
+                    <span className="avg-rating">{avgRating.toFixed(1)}</span>
                     {renderStars(Math.round(avgRating))}
-                    <span className="review-count">({doctorReviews.length} recenzii)</span>
+                    <span className="review-count">({totalReviews} {totalReviews === 1 ? t('reviews.reviewSingular') : t('reviews.reviewPlural')})</span>
                   </>
                 ) : (
                   <span className="no-reviews">{t('reviews.noReviews')}</span>

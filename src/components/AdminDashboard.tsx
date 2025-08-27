@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { AdminDashboardDto, UserDto, AppointmentResponseDto } from '../types/dto';
-import { getAdminDashboardStats, getAllUsers, getAllAppointments } from '../api/admin';
+import { AdminDashboardDto, UserDto, AppointmentResponseDto, UpdateUserRoleDto } from '../types/dto';
+import { getAdminDashboardStats, getAllUsers, getAllAppointments, updateUserRole } from '../api/admin';
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import Toast from './Toast';
 import './AdminDashboard.css';
 
 interface AdminDashboardProps {
@@ -19,6 +20,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [appointmentsLoading, setAppointmentsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'appointments'>('overview');
+  
+  // Modal state for user role management
+  const [showRoleModal, setShowRoleModal] = useState<boolean>(false);
+  const [selectedUser, setSelectedUser] = useState<UserDto | null>(null);
+  const [newRole, setNewRole] = useState<string>('');
+  const [specialization, setSpecialization] = useState<string>('');
+  const [phone, setPhone] = useState<string>('');
+  
+  // Toast state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+    isVisible: boolean;
+  }>({
+    message: '',
+    type: 'info',
+    isVisible: false,
+  });
+
+  // Function to show toast messages
+  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+    setToast({ message, type, isVisible: true });
+  };
+
+  // Function to hide toast
+  const hideToast = () => {
+    setToast(prev => ({ ...prev, isVisible: false }));
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -77,6 +106,92 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
     fetchAppointments();
   }, [activeTab]);
+
+  // Helper function to get translated status
+  const getTranslatedStatus = (status: string): string => {
+    switch (status) {
+      case 'scheduled':
+        return t('status.scheduled');
+      case 'completed':
+        return t('status.completed');
+      case 'cancelled':
+        return t('status.cancelled');
+      case 'no-show':
+        return t('status.noShow');
+      default:
+        return status;
+    }
+  };
+
+  // Handle user row click (only for non-admin users)
+  const handleUserClick = (user: UserDto) => {
+    // Only allow clicking on Client and Doctor users, not Admin users
+    if (user.role === 'Client' || user.role === 'Doctor') {
+      setSelectedUser(user);
+      setNewRole(''); // Start with empty selection
+      setSpecialization(''); // Reset specialization
+      setPhone(''); // Reset phone
+      setShowRoleModal(true);
+    }
+  };
+
+  // Handle role change confirmation
+  const handleRoleChange = async () => {
+    if (!selectedUser || !newRole) return;
+    
+    // Validate specialization is required when changing to Doctor
+    if (newRole === 'Doctor' && !specialization.trim()) {
+      showToast('Specialization is required when changing role to Doctor', 'error');
+      return;
+    }
+    
+    try {
+      // Call the API to update user role
+      const updateDto: UpdateUserRoleDto = {
+        userId: selectedUser.id,
+        roleName: newRole,
+        ...(newRole === 'Doctor' && { 
+          specialization: specialization.trim(),
+          phone: phone.trim() || undefined 
+        })
+      };
+
+      await updateUserRole(updateDto);
+      
+      // Update local state on success
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === selectedUser.id 
+            ? { ...user, role: newRole as "Admin" | "Client" | "Doctor" }
+            : user
+        )
+      );
+      
+      // Close modal
+      setShowRoleModal(false);
+      setSelectedUser(null);
+      setNewRole('');
+      setSpecialization('');
+      setPhone('');
+      
+      // Show success toast
+      showToast(t('userManagement.roleUpdateSuccess'), 'success');
+      
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      // Show error toast
+      showToast(t('userManagement.roleUpdateError'), 'error');
+    }
+  };
+
+  // Handle modal close
+  const handleCloseModal = () => {
+    setShowRoleModal(false);
+    setSelectedUser(null);
+    setNewRole('');
+    setSpecialization('');
+    setPhone('');
+  };
 
   const renderOverview = () => {
     if (loading) {
@@ -213,12 +328,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             </thead>
             <tbody>
               {users.map(user => (
-                <tr key={user.id}>
+                <tr 
+                  key={user.id}
+                  className={user.role === 'Client' || user.role === 'Doctor' ? 'clickable-row' : 'non-clickable-row'}
+                  onClick={() => handleUserClick(user)}
+                  style={{
+                    cursor: user.role === 'Client' || user.role === 'Doctor' ? 'pointer' : 'default',
+                    opacity: user.role === 'Admin' ? 0.7 : 1
+                  }}
+                >
                   <td>{user.displayName}</td>
                   <td>{user.email}</td>
                   <td>
                     <span className={`role-badge role-${user.role.toLowerCase()}`}>
-                      {user.role === 'Client' ? t('users.client') : t('users.admin')}
+                      {user.role === 'Client' ? t('users.client') : 
+                       user.role === 'Admin' ? t('users.admin') : 
+                       t('users.doctor')}
                     </span>
                   </td>
                   <td>{user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : 'N/A'}</td>
@@ -254,11 +379,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         <div className="content-header">
           <h3>{t('dashboard.appointments')}</h3>
           <div className="appointment-stats">
-            <span>Total: {appointments.length}</span>
-            <span>Scheduled: {appointmentsByStatus.scheduled.length}</span>
-            <span>Completed: {appointmentsByStatus.completed.length}</span>
-            <span>Cancelled: {appointmentsByStatus.cancelled.length}</span>
-            <span>No-show: {appointmentsByStatus['no-show'].length}</span>
+            <span>{t('common.total')}: {appointments.length}</span>
+            <span>{t('status.scheduled')}: {appointmentsByStatus.scheduled.length}</span>
+            <span>{t('status.completed')}: {appointmentsByStatus.completed.length}</span>
+            <span>{t('status.cancelled')}: {appointmentsByStatus.cancelled.length}</span>
+            <span>{t('status.noShow')}: {appointmentsByStatus['no-show'].length}</span>
           </div>
         </div>
 
@@ -267,12 +392,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           <table>
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Client</th>
-                <th>Doctor</th>
-                <th>Reason</th>
-                <th>Status</th>
+                <th>{t('appointments.date')}</th>
+                <th>{t('appointments.time')}</th>
+                <th>{t('appointments.patient')}</th>
+                <th>{t('appointments.doctor')}</th>
+                <th>{t('booking.reason')}</th>
+                <th>{t('appointments.status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -289,13 +414,111 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                   <td>{appointment.reason}</td>
                   <td>
                     <span className={`status-badge status-${appointment.status}`}>
-                      {appointment.status}
+                      {getTranslatedStatus(appointment.status)}
                     </span>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+    );
+  };
+
+  // Role Change Modal Component
+  const renderRoleModal = () => {
+    if (!showRoleModal || !selectedUser) return null;
+
+    return (
+      <div className="modal-overlay" onClick={handleCloseModal}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>{t('userManagement.changeRole')}</h3>
+            <button className="modal-close" onClick={handleCloseModal}>
+              ×
+            </button>
+          </div>
+          
+          <div className="modal-body">
+            <div className="user-info">
+              <p><strong>{t('userManagement.user')}:</strong> {selectedUser.displayName}</p>
+              <p><strong>Email:</strong> {selectedUser.email}</p>
+              <p><strong>{t('userManagement.currentRole')}:</strong> 
+                <span className={`role-badge role-${selectedUser.role.toLowerCase()}`}>
+                  {selectedUser.role === 'Client' ? t('users.client') : 
+                   selectedUser.role === 'Admin' ? t('users.admin') : 
+                   t('users.doctor')}
+                </span>
+              </p>
+            </div>
+            
+            <div className="role-selection">
+              <label htmlFor="role-select">{t('userManagement.newRole')}:</label>
+              <select 
+                id="role-select"
+                value={newRole} 
+                onChange={(e) => setNewRole(e.target.value)}
+              >
+                <option value="">{t('userManagement.selectRole')}</option>
+                {selectedUser.role !== 'Client' && (
+                  <option value="Client">{t('users.client')}</option>
+                )}
+                {selectedUser.role !== 'Admin' && (
+                  <option value="Admin">{t('users.admin')}</option>
+                )}
+                {selectedUser.role !== 'Doctor' && (
+                  <option value="Doctor">{t('users.doctor')}</option>
+                )}
+              </select>
+            </div>
+
+            {/* Doctor-specific fields */}
+            {newRole === 'Doctor' && (
+              <div className="doctor-fields">
+                <div className="form-group">
+                  <label htmlFor="specialization">
+                    {t('doctor.specialization')} <span className="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="specialization"
+                    value={specialization}
+                    onChange={(e) => setSpecialization(e.target.value)}
+                    placeholder={t('doctor.specializationPlaceholder')}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="phone">{t('doctor.phone')}</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={t('doctor.phonePlaceholder')}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="modal-footer">
+            <button className="btn-cancel" onClick={handleCloseModal}>
+              {t('common.cancel')}
+            </button>
+            <button 
+              className="btn-confirm" 
+              onClick={handleRoleChange}
+              disabled={
+                !newRole || 
+                newRole === selectedUser.role || 
+                (newRole === 'Doctor' && !specialization.trim())
+              }
+            >
+              {t('userManagement.confirmChange')}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -339,6 +562,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         {activeTab === 'users' && renderUsers()}
         {activeTab === 'appointments' && renderAppointments()}
       </div>
+
+      {/* Role Change Modal */}
+      {renderRoleModal()}
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
     </div>
   );
 };

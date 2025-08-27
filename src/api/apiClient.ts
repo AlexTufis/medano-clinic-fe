@@ -30,8 +30,17 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid, clear token and redirect to login
+      console.log("Token expired or invalid, clearing token");
       TokenStorage.clearToken();
-      window.location.href = "/login";
+
+      // Only redirect if we're not already on a login/register page
+      if (
+        !window.location.pathname.includes("/login") &&
+        !window.location.pathname.includes("/register")
+      ) {
+        // For SPA, we'll let the App component handle the redirect
+        window.dispatchEvent(new CustomEvent("auth-expired"));
+      }
     }
     return Promise.reject(error);
   }

@@ -2,6 +2,7 @@ import React, { FC, useState, FormEvent } from 'react';
 import { login } from '../api/auth';
 import { LoginRequestDto } from '../types/dto';
 import { useLanguage } from '../contexts/LanguageContext';
+import LoadingSpinner from './LoadingSpinner';
 
 interface Props {
   onLogin: (email: string, role: string) => void;
@@ -65,7 +66,8 @@ const LoginForm: FC<Props> = ({ onLogin }) => {
           disabled={isLoading}
         />
       </div>
-      <button type="submit" disabled={isLoading}>
+      <button type="submit" disabled={isLoading} className={isLoading ? 'btn-loading' : ''}>
+        {isLoading && <LoadingSpinner size="small" color="#ffffff" />}
         {isLoading ? t('auth.loggingIn') : t('auth.login')}
       </button>
     </form>

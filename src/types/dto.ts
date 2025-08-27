@@ -43,9 +43,18 @@ export interface UserDto {
   displayName: string;
   dateOfBirth?: string;
   gender?: number;
-  role: "Admin" | "Client";
+  role: "Admin" | "Client" | "Doctor";
   createdAt: string;
   isActive: boolean;
+}
+
+export interface UpdateUserRoleDto {
+  userId: string;
+  roleName: string;
+  // Required when changing role to Doctor
+  specialization?: string;
+  // Optional when changing role to Doctor
+  phone?: string;
 }
 
 export interface RegisterDto {
@@ -68,7 +77,7 @@ export interface User {
   displayName: string;
   dateOfBirth?: string;
   gender?: number;
-  role: "Admin" | "Client";
+  role: "Admin" | "Client" | "Doctor";
   createdAt: string;
   isActive: boolean;
 }
@@ -81,6 +90,9 @@ export interface Doctor {
   email: string;
   phone?: string;
   isActive: boolean;
+  // Review Information
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 // DTO for getting doctors from backend
@@ -92,6 +104,9 @@ export interface DoctorDto {
   email: string;
   phone?: string;
   isActive: boolean;
+  // Review Information
+  averageRating: number;
+  totalReviews: number;
 }
 
 // DTO for creating appointments
@@ -196,4 +211,14 @@ export interface ReviewDto {
   rating: number;
   comment: string;
   createdAt: string;
+}
+
+export interface AppointmentHourDto {
+  id: string; // String format for frontend compatibility
+  doctorId: string; // String format for frontend compatibility
+  hour: string; // String format (HH:mm) for frontend compatibility
+  dayOfWeek: string; // String format for frontend compatibility
+  isActive: boolean;
+  createdAt: string; // String format for frontend compatibility
+  updatedAt?: string; // String format for frontend compatibility
 }

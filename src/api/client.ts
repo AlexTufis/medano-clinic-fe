@@ -4,6 +4,7 @@ import {
   AppointmentResponseDto,
   CreateReviewDto,
   ReviewDto,
+  AppointmentHourDto,
 } from "../types/dto";
 import TokenStorage from "../utils/tokenStorage";
 import apiClient from "./apiClient";
@@ -85,6 +86,21 @@ export const getReviews = async (): Promise<ReviewDto[]> => {
     return response.data;
   } catch (error) {
     console.error("Error fetching reviews:", error);
+    throw error;
+  }
+};
+
+export const getDoctorAppointmentHoursByDay = async (
+  doctorId: string,
+  dayOfWeek: string
+): Promise<AppointmentHourDto[]> => {
+  try {
+    const response = await apiClient.get(
+      `/Client/appointment-hours/doctor/${doctorId}/day/${dayOfWeek}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching appointment hours:", error);
     throw error;
   }
 };

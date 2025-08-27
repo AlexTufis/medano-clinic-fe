@@ -7,7 +7,11 @@ export async function login(dto: LoginRequestDto): Promise<LoginResponseDto> {
 
   // Store the token if it exists in the response
   if (response.data.token) {
-    TokenStorage.setToken(response.data.token);
+    TokenStorage.setToken(
+      response.data.token,
+      response.data.email,
+      response.data.role
+    );
   }
 
   return response.data;

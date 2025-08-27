@@ -2,6 +2,7 @@ import {
   AdminDashboardDto,
   UserDto,
   AppointmentResponseDto,
+  UpdateUserRoleDto,
 } from "../types/dto";
 import apiClient from "./apiClient";
 
@@ -23,6 +24,21 @@ export async function getAllAppointments(): Promise<AppointmentResponseDto[]> {
     return response.data;
   } catch (error) {
     console.error("Error fetching appointments:", error);
+    throw error;
+  }
+}
+
+export async function updateUserRole(
+  dto: UpdateUserRoleDto
+): Promise<{ message: string }> {
+  try {
+    const response = await apiClient.put<{ message: string }>(
+      "/Doctor/update-user-role",
+      dto
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating user role:", error);
     throw error;
   }
 }

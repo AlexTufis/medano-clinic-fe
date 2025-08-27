@@ -1,6 +1,7 @@
 import React, { FC, useState, FormEvent } from 'react';
 import { register } from '../api/auth';
 import { RegisterDto } from '../types/dto';
+import LoadingSpinner from './LoadingSpinner';
 
 interface Props {
   onSuccess?: () => void;
@@ -19,6 +20,7 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
   });
   const [message, setMessage] = useState<string>('');
   const [errors, setErrors] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -36,6 +38,7 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
     e.preventDefault();
     setMessage('');
     setErrors([]);
+    setIsLoading(true);
 
     console.log('Form data being sent:', form); // Debug log
 
@@ -92,6 +95,8 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
       }
       
       setErrors(errorMessages.length > 0 ? errorMessages : ['Registration failed. Please try again.']);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -117,6 +122,7 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
           onChange={handleChange}
           required
           placeholder="Choose a unique username"
+          disabled={isLoading}
         />
       </div>
       
@@ -130,6 +136,7 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
           onChange={handleChange}
           required
           placeholder="Enter your first name"
+          disabled={isLoading}
         />
       </div>
       
@@ -143,6 +150,7 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
           onChange={handleChange}
           required
           placeholder="Enter your last name"
+          disabled={isLoading}
         />
       </div>
       
@@ -156,6 +164,7 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
           onChange={handleChange}
           required
           placeholder="How would you like to be called?"
+          disabled={isLoading}
         />
       </div>
       
@@ -169,6 +178,7 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
           onChange={handleChange}
           required
           placeholder="Enter your email"
+          disabled={isLoading}
         />
       </div>
       
@@ -183,6 +193,7 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
           required
           minLength={6}
           placeholder="Create a password (min 6 characters)"
+          disabled={isLoading}
         />
       </div>
       
@@ -194,6 +205,7 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
           type="date"
           value={form.dateOfBirth}
           onChange={handleChange}
+          disabled={isLoading}
         />
       </div>
       
@@ -204,6 +216,7 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
           name="gender"
           value={form.gender !== undefined ? form.gender.toString() : ''}
           onChange={handleChange}
+          disabled={isLoading}
         >
           <option value="">Select gender</option>
           <option value="0">Male</option>
@@ -212,8 +225,12 @@ const ClientCreateForm: FC<Props> = ({ onSuccess }) => {
         </select>
       </div>
       
-      <button type="submit">
-        {onSuccess ? 'Create Account' : 'Add User'}
+      <button type="submit" disabled={isLoading} className={isLoading ? 'btn-loading' : ''}>
+        {isLoading && <LoadingSpinner size="small" color="#ffffff" />}
+        {isLoading 
+          ? (onSuccess ? 'Creating Account...' : 'Adding User...') 
+          : (onSuccess ? 'Create Account' : 'Add User')
+        }
       </button>
     </form>
   );

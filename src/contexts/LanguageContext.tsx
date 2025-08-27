@@ -47,6 +47,7 @@ type TranslationKeys = {
   'users.inactive': string;
   'users.client': string;
   'users.admin': string;
+  'users.doctor': string;
   
   // Appointments Table
   'appointments.patient': string;
@@ -58,6 +59,7 @@ type TranslationKeys = {
   
   // Auth
   'auth.login': string;
+  'auth.loggingIn': string;
   'auth.email': string;
   'auth.password': string;
   'auth.createAccount': string;
@@ -72,6 +74,19 @@ type TranslationKeys = {
   'common.loading': string;
   'common.error': string;
   'common.success': string;
+  'common.welcome': string;
+  'common.cancel': string;
+  'common.total': string;
+  
+  // User Management
+  'userManagement.changeRole': string;
+  'userManagement.user': string;
+  'userManagement.currentRole': string;
+  'userManagement.newRole': string;
+  'userManagement.selectRole': string;
+  'userManagement.confirmChange': string;
+  'userManagement.roleUpdateSuccess': string;
+  'userManagement.roleUpdateError': string;
   
   // Client Dashboard
   'client.dashboard.title': string;
@@ -80,6 +95,20 @@ type TranslationKeys = {
   'client.myAppointments': string;
   'client.doctorReviews': string;
   'client.leaveReview': string;
+  'client.doctorRating': string;
+  
+  // Doctor Dashboard
+  'doctor.dashboard.title': string;
+  'doctor.appointments': string;
+  'doctor.reviews': string;
+  'doctor.myAppointments': string;
+  'doctor.myReviews': string;
+  'doctor.noAppointments': string;
+  'doctor.noReviews': string;
+  'doctor.specialization': string;
+  'doctor.specializationPlaceholder': string;
+  'doctor.phone': string;
+  'doctor.phonePlaceholder': string;
   
   // Appointment Booking
   'booking.selectDoctor': string;
@@ -99,6 +128,8 @@ type TranslationKeys = {
   'reviews.averageRating': string;
   'reviews.noReviews': string;
   'reviews.stars': string;
+  'reviews.reviewSingular': string;
+  'reviews.reviewPlural': string;
 };
 
 // Translation keys and values
@@ -139,6 +170,7 @@ const translations: Record<Language, TranslationKeys> = {
     'users.inactive': 'Inactiv',
     'users.client': 'Client',
     'users.admin': 'Administrator',
+    'users.doctor': 'Doctor',
     
     // Appointments Table
     'appointments.patient': 'Pacient',
@@ -150,12 +182,13 @@ const translations: Record<Language, TranslationKeys> = {
     
     // Auth
     'auth.login': 'Conectare',
+    'auth.loggingIn': 'Se conectează...',
     'auth.email': 'Email',
     'auth.password': 'Parolă',
     'auth.createAccount': 'Creează Cont',
     'auth.alreadyHaveAccount': 'Ai deja un cont?',
     'auth.dontHaveAccount': 'Nu ai un cont?',
-    'auth.welcomeBack': 'Bun venit înapoi',
+    'auth.welcomeBack': 'Medano Clinic',
     'auth.invalidCredentials': 'Date de conectare invalide',
     
     // Common
@@ -164,6 +197,19 @@ const translations: Record<Language, TranslationKeys> = {
     'common.loading': 'Se încarcă...',
     'common.error': 'Eroare',
     'common.success': 'Succes',
+    'common.welcome': 'Bine ai venit',
+    'common.cancel': 'Anulează',
+    'common.total': 'Total',
+    
+    // User Management
+    'userManagement.changeRole': 'Schimbă Rolul',
+    'userManagement.user': 'Utilizator',
+    'userManagement.currentRole': 'Rol Curent',
+    'userManagement.newRole': 'Rol Nou',
+    'userManagement.selectRole': 'Selectează Rolul',
+    'userManagement.confirmChange': 'Confirmă Schimbarea',
+    'userManagement.roleUpdateSuccess': 'Rolul utilizatorului a fost actualizat cu succes',
+    'userManagement.roleUpdateError': 'Eroare la actualizarea rolului utilizatorului',
     
     // Client Dashboard
     'client.dashboard.title': 'Panou Client',
@@ -172,6 +218,20 @@ const translations: Record<Language, TranslationKeys> = {
     'client.myAppointments': 'Programările Mele',
     'client.doctorReviews': 'Recenzii Doctori',
     'client.leaveReview': 'Lasă o Recenzie',
+    'client.doctorRating': 'Evaluarea Doctorului',
+    
+    // Doctor Dashboard
+    'doctor.dashboard.title': 'Panou Doctor',
+    'doctor.appointments': 'Programări',
+    'doctor.reviews': 'Recenzii',
+    'doctor.myAppointments': 'Programările Mele',
+    'doctor.myReviews': 'Recenziile Mele',
+    'doctor.noAppointments': 'Nu aveți programări',
+    'doctor.noReviews': 'Nu aveți recenzii',
+    'doctor.specialization': 'Specializarea',
+    'doctor.specializationPlaceholder': 'Ex: Cardiologie, Dermatologie, etc.',
+    'doctor.phone': 'Telefon',
+    'doctor.phonePlaceholder': 'Ex: +40 123 456 789',
     
     // Appointment Booking
     'booking.selectDoctor': 'Selectează Doctorul',
@@ -191,6 +251,8 @@ const translations: Record<Language, TranslationKeys> = {
     'reviews.averageRating': 'Evaluare Medie',
     'reviews.noReviews': 'Nu există recenzii încă',
     'reviews.stars': 'stele',
+    'reviews.reviewSingular': 'recenzie',
+    'reviews.reviewPlural': 'recenzii',
   },
   en: {
     // Dashboard
@@ -228,6 +290,7 @@ const translations: Record<Language, TranslationKeys> = {
     'users.inactive': 'Inactive',
     'users.client': 'Client',
     'users.admin': 'Administrator',
+    'users.doctor': 'Doctor',
     
     // Appointments Table
     'appointments.patient': 'Patient',
@@ -239,12 +302,13 @@ const translations: Record<Language, TranslationKeys> = {
     
     // Auth
     'auth.login': 'Login',
+    'auth.loggingIn': 'Logging in...',
     'auth.email': 'Email',
     'auth.password': 'Password',
     'auth.createAccount': 'Create Account',
     'auth.alreadyHaveAccount': 'Already have an account?',
     'auth.dontHaveAccount': "Don't have an account?",
-    'auth.welcomeBack': 'Welcome Back',
+    'auth.welcomeBack': 'Medano Clinic',
     'auth.invalidCredentials': 'Invalid credentials',
     
     // Common
@@ -253,6 +317,19 @@ const translations: Record<Language, TranslationKeys> = {
     'common.loading': 'Loading...',
     'common.error': 'Error',
     'common.success': 'Success',
+    'common.welcome': 'Welcome',
+    'common.cancel': 'Cancel',
+    'common.total': 'Total',
+    
+    // User Management
+    'userManagement.changeRole': 'Change Role',
+    'userManagement.user': 'User',
+    'userManagement.currentRole': 'Current Role',
+    'userManagement.newRole': 'New Role',
+    'userManagement.selectRole': 'Select Role',
+    'userManagement.confirmChange': 'Confirm Change',
+    'userManagement.roleUpdateSuccess': 'User role updated successfully',
+    'userManagement.roleUpdateError': 'Error updating user role',
     
     // Client Dashboard
     'client.dashboard.title': 'Client Dashboard',
@@ -261,6 +338,20 @@ const translations: Record<Language, TranslationKeys> = {
     'client.myAppointments': 'My Appointments',
     'client.doctorReviews': 'Doctor Reviews',
     'client.leaveReview': 'Leave Review',
+    'client.doctorRating': 'Doctor Rating',
+    
+    // Doctor Dashboard
+    'doctor.dashboard.title': 'Doctor Dashboard',
+    'doctor.appointments': 'Appointments',
+    'doctor.reviews': 'Reviews',
+    'doctor.myAppointments': 'My Appointments',
+    'doctor.myReviews': 'My Reviews',
+    'doctor.noAppointments': 'No appointments found',
+    'doctor.noReviews': 'No reviews yet',
+    'doctor.specialization': 'Specialization',
+    'doctor.specializationPlaceholder': 'e.g. Cardiology, Dermatology, etc.',
+    'doctor.phone': 'Phone',
+    'doctor.phonePlaceholder': 'e.g. +1 123 456 7890',
     
     // Appointment Booking
     'booking.selectDoctor': 'Select Doctor',
@@ -280,6 +371,8 @@ const translations: Record<Language, TranslationKeys> = {
     'reviews.averageRating': 'Average Rating',
     'reviews.noReviews': 'No reviews yet',
     'reviews.stars': 'stars',
+    'reviews.reviewSingular': 'review',
+    'reviews.reviewPlural': 'reviews',
   }
 };
 
