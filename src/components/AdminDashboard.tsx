@@ -3,6 +3,7 @@ import { AdminDashboardDto, UserDto, AppointmentResponseDto, UpdateUserRoleDto, 
 import { getAdminDashboardStats, getAllUsers, getAllAppointments, updateUserRole, updateAppointmentStatus } from '../api/admin';
 import { getReviews } from '../api/client';
 import { useLanguage } from '../contexts/LanguageContext';
+import { generateMedicalReportWord } from '../utils/documentGenerator';
 import LanguageSwitcher from './LanguageSwitcher';
 import Toast from './Toast';
 import LoadingSpinner from './LoadingSpinner';
@@ -33,6 +34,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [newRole, setNewRole] = useState<string>('');
   const [specialization, setSpecialization] = useState<string>('');
   const [phone, setPhone] = useState<string>('');
+  
+  // Medical Reports Modal state
+  const [showMedicalReportsModal, setShowMedicalReportsModal] = useState<boolean>(false);
+  const [selectedUserForReports, setSelectedUserForReports] = useState<UserDto | null>(null);
+  
+  // Print Modal state
+  const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
+  const [selectedReportForPrint, setSelectedReportForPrint] = useState<any>(null);
   
   // Toast state
   const [toast, setToast] = useState<{
@@ -274,6 +283,62 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     setPhone('');
   };
 
+  // Medical Reports Modal handlers
+  const handleOpenMedicalReportsModal = (user: UserDto) => {
+    setSelectedUserForReports(user);
+    setShowMedicalReportsModal(true);
+  };
+
+  const handleCloseMedicalReportsModal = () => {
+    setShowMedicalReportsModal(false);
+    setSelectedUserForReports(null);
+  };
+
+  // Download medical report as Word document
+  const handleDownloadReport = async (report: any) => {
+    try {
+      await generateMedicalReportWord(report, t);
+      showToast(t('medicalReport.downloadSuccess'), 'success');
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      showToast(t('medicalReport.downloadError'), 'error');
+    }
+  };
+
+  // Download all medical reports for a user as a single Word document
+  const handleDownloadAllReports = async (user: UserDto) => {
+    if (!user.medicalReports || user.medicalReports.length === 0) return;
+    
+    try {
+      // For now, we'll download each report separately
+      // In a real application, you might want to combine them into one document
+      for (let i = 0; i < user.medicalReports.length; i++) {
+        const report = user.medicalReports[i];
+        await generateMedicalReportWord(report, t);
+        // Add small delay between downloads to prevent browser blocking
+        if (i < user.medicalReports.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      showToast(t('medicalReport.downloadSuccess'), 'success');
+    } catch (error) {
+      console.error('Error downloading reports:', error);
+      showToast(t('medicalReport.downloadError'), 'error');
+    }
+  };
+
+  // Print medical report
+  const handlePrintReport = (report: any) => {
+    setSelectedReportForPrint(report);
+    setShowPrintModal(true);
+  };
+
+  // Close print modal
+  const handleClosePrintModal = () => {
+    setShowPrintModal(false);
+    setSelectedReportForPrint(null);
+  };
+
   const renderOverview = () => {
     if (loading) {
       return (
@@ -415,6 +480,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 <th>{t('users.role')}</th>
                 <th>{t('users.dateOfBirth')}</th>
                 <th>{t('users.status')}</th>
+                <th>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -442,6 +508,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     <span className={`status-badge ${user.isActive ? 'status-active' : 'status-inactive'}`}>
                       {user.isActive ? t('users.active') : t('users.inactive')}
                     </span>
+                  </td>
+                  <td>
+                    {user.role === 'Client' && user.medicalReports && user.medicalReports.length > 0 ? (
+                      <button
+                        className="view-reports-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenMedicalReportsModal(user);
+                        }}
+                        title={`${t('medicalReport.viewReports')} (${user.medicalReports.length})`}
+                      >
+                        {t('medicalReport.view')} ({user.medicalReports.length})
+                      </button>
+                    ) : (
+                      <span className="no-reports">-</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -761,6 +843,144 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
       {/* Role Change Modal */}
       {renderRoleModal()}
+
+      {/* Medical Reports Modal */}
+      {showMedicalReportsModal && selectedUserForReports && (
+        <div className="modal-overlay" onClick={handleCloseMedicalReportsModal}>
+          <div className="modal-content medical-reports-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{t('medicalReport.viewReports')} - {selectedUserForReports.displayName}</h3>
+              <button 
+                className="modal-close" 
+                onClick={handleCloseMedicalReportsModal}
+                aria-label={t('common.close')}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              {selectedUserForReports.medicalReports && selectedUserForReports.medicalReports.length > 0 ? (
+                <div className="medical-reports-list">
+                  {selectedUserForReports.medicalReports.map((report, index) => (
+                    <div key={index} className="medical-report-item">
+                      <div className="medical-report-header">
+                        <h4>{t('medicalReport.title')} #{index + 1}</h4>
+                        <span className="report-date">
+                          {t('medicalReport.createdAt')}: {new Date(report.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="medical-report-content">
+                        <div className="report-section">
+                          <h5>{t('medicalReport.medicalHistory')}</h5>
+                          <p>{report.antecedente || t('medicalReport.noData')}</p>
+                        </div>
+                        <div className="report-section">
+                          <h5>{t('medicalReport.symptoms')}</h5>
+                          <p>{report.simptome || t('medicalReport.noData')}</p>
+                        </div>
+                        <div className="report-section">
+                          <h5>{t('medicalReport.clinicalExam')}</h5>
+                          <p>{report.clinice || t('medicalReport.noData')}</p>
+                        </div>
+                        <div className="report-section">
+                          <h5>{t('medicalReport.paraclinicalExam')}</h5>
+                          <p>{report.paraclinice || t('medicalReport.noData')}</p>
+                        </div>
+                        <div className="report-section">
+                          <h5>{t('medicalReport.diagnosis')}</h5>
+                          <p>{report.diagnostic || t('medicalReport.noData')}</p>
+                        </div>
+                        <div className="report-section">
+                          <h5>{t('medicalReport.recommendations')}</h5>
+                          <p>{report.recomandari || t('medicalReport.noData')}</p>
+                        </div>
+                      </div>
+                      <div className="medical-report-actions">
+                        <button
+                          className="btn-download"
+                          onClick={() => handleDownloadReport(report)}
+                          title={t('medicalReport.download')}
+                        >
+                          📄 {t('medicalReport.download')}
+                        </button>
+                        <button
+                          className="btn-print"
+                          onClick={() => handlePrintReport(report)}
+                          title={t('medicalReport.print')}
+                        >
+                          🖨️ {t('medicalReport.print')}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-reports">{t('medicalReport.noReports')}</p>
+              )}
+            </div>
+            <div className="modal-footer">
+              {selectedUserForReports.medicalReports && selectedUserForReports.medicalReports.length > 1 && (
+                <button 
+                  type="button" 
+                  className="btn-download-all" 
+                  onClick={() => handleDownloadAllReports(selectedUserForReports)}
+                >
+                  📄 {t('medicalReport.download')} ({selectedUserForReports.medicalReports.length})
+                </button>
+              )}
+              <button 
+                type="button" 
+                className="btn-cancel" 
+                onClick={handleCloseMedicalReportsModal}
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print Modal */}
+      {showPrintModal && selectedReportForPrint && (
+        <div className="modal-overlay" onClick={handleClosePrintModal}>
+          <div className="modal-content print-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{t('medicalReport.print')} - {selectedReportForPrint.patientName}</h3>
+              <button 
+                className="modal-close" 
+                onClick={handleClosePrintModal}
+                aria-label={t('common.close')}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="print-preview">
+                <p>{t('medicalReport.title')} #{(selectedUserForReports?.medicalReports && selectedReportForPrint ? selectedUserForReports.medicalReports.indexOf(selectedReportForPrint) + 1 : 1)}</p>
+                <p><strong>{t('appointments.patient')}:</strong> {selectedReportForPrint?.patientName}</p>
+                <p><strong>{t('appointments.date')}:</strong> {selectedReportForPrint ? new Date(selectedReportForPrint.appointmentDate).toLocaleDateString() : ''}</p>
+                <p><strong>{t('appointments.doctor')}:</strong> {selectedReportForPrint?.doctorName}</p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="btn-cancel" 
+                onClick={handleClosePrintModal}
+              >
+                {t('common.cancel')}
+              </button>
+              <button 
+                type="button" 
+                className="btn-print-action" 
+                onClick={handleClosePrintModal}
+              >
+                🖨️ {t('medicalReport.print')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       <Toast

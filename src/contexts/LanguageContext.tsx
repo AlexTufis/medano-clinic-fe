@@ -79,6 +79,7 @@ type TranslationKeys = {
   'common.success': string;
   'common.welcome': string;
   'common.cancel': string;
+  'common.close': string;
   'common.total': string;
   
   // User Management
@@ -159,6 +160,22 @@ type TranslationKeys = {
   'medicalReport.success': string;
   'medicalReport.error': string;
   'medicalReport.appointmentCompleted': string;
+  'medicalReport.view': string;
+  'medicalReport.viewReports': string;
+  'medicalReport.noReports': string;
+  'medicalReport.createdAt': string;
+  'medicalReport.noData': string;
+  'medicalReport.medicalHistory': string;
+  'medicalReport.symptoms': string;
+  'medicalReport.clinicalExam': string;
+  'medicalReport.paraclinicalExam': string;
+  'medicalReport.diagnosis': string;
+  'medicalReport.recommendations': string;
+  'medicalReport.download': string;
+  'medicalReport.print': string;
+  'medicalReport.downloadSuccess': string;
+  'medicalReport.downloadError': string;
+  'medicalReport.printError': string;
 };
 
 // Translation keys and values
@@ -231,6 +248,7 @@ const translations: Record<Language, TranslationKeys> = {
     'common.success': 'Succes',
     'common.welcome': 'Bine ai venit',
     'common.cancel': 'Anulează',
+    'common.close': 'Închide',
     'common.total': 'Total',
     
     // User Management
@@ -311,6 +329,22 @@ const translations: Record<Language, TranslationKeys> = {
     'medicalReport.success': 'Raportul medical a fost creat cu succes',
     'medicalReport.error': 'Eroare la crearea raportului medical',
     'medicalReport.appointmentCompleted': 'Programarea este finalizată - Se poate crea raport medical',
+    'medicalReport.view': 'Vezi Rapoarte',
+    'medicalReport.viewReports': 'Vezi Rapoartele Medicale',
+    'medicalReport.noReports': 'Nu există rapoarte medicale',
+    'medicalReport.createdAt': 'Creat la',
+    'medicalReport.noData': 'Nu există informații',
+    'medicalReport.medicalHistory': 'Antecedente Medicale',
+    'medicalReport.symptoms': 'Simptome',
+    'medicalReport.clinicalExam': 'Examen Clinic',
+    'medicalReport.paraclinicalExam': 'Examen Paraclinic',
+    'medicalReport.diagnosis': 'Diagnostic',
+    'medicalReport.recommendations': 'Recomandări',
+    'medicalReport.download': 'Descarcă Word',
+    'medicalReport.print': 'Printează',
+    'medicalReport.downloadSuccess': 'Raportul a fost descărcat cu succes!',
+    'medicalReport.downloadError': 'Eroare la descărcarea raportului',
+    'medicalReport.printError': 'Eroare la deschiderea dialogului de printare',
   },
   en: {
     // Dashboard
@@ -380,6 +414,7 @@ const translations: Record<Language, TranslationKeys> = {
     'common.success': 'Success',
     'common.welcome': 'Welcome',
     'common.cancel': 'Cancel',
+    'common.close': 'Close',
     'common.total': 'Total',
     
     // User Management
@@ -460,6 +495,22 @@ const translations: Record<Language, TranslationKeys> = {
     'medicalReport.success': 'Medical report created successfully',
     'medicalReport.error': 'Error creating medical report',
     'medicalReport.appointmentCompleted': 'Appointment is completed - Medical report can be created',
+    'medicalReport.view': 'View Reports',
+    'medicalReport.viewReports': 'View Medical Reports',
+    'medicalReport.noReports': 'No medical reports available',
+    'medicalReport.createdAt': 'Created at',
+    'medicalReport.noData': 'No data available',
+    'medicalReport.medicalHistory': 'Medical History',
+    'medicalReport.symptoms': 'Symptoms',
+    'medicalReport.clinicalExam': 'Clinical Exam',
+    'medicalReport.paraclinicalExam': 'Paraclinical Exam',
+    'medicalReport.diagnosis': 'Diagnosis',
+    'medicalReport.recommendations': 'Recommendations',
+    'medicalReport.download': 'Download Word',
+    'medicalReport.print': 'Print',
+    'medicalReport.downloadSuccess': 'Report downloaded successfully!',
+    'medicalReport.downloadError': 'Error downloading report',
+    'medicalReport.printError': 'Error opening print dialog',
   }
 };
 

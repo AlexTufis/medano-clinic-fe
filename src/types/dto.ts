@@ -46,6 +46,7 @@ export interface UserDto {
   role: "Admin" | "Client" | "Doctor";
   createdAt: string;
   isActive: boolean;
+  medicalReports: MedicalReportDto[];
 }
 
 export interface UpdateUserRoleDto {
