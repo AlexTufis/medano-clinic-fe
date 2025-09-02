@@ -137,6 +137,28 @@ type TranslationKeys = {
   'reviews.stars': string;
   'reviews.reviewSingular': string;
   'reviews.reviewPlural': string;
+  
+  // Status Management
+  'status.changeStatus': string;
+  'status.selectStatus': string;
+  'status.statusUpdateSuccess': string;
+  'status.statusUpdateError': string;
+  
+  // Medical Reports
+  'medicalReport.title': string;
+  'medicalReport.create': string;
+  'medicalReport.createReport': string;
+  'medicalReport.antecedente': string;
+  'medicalReport.simptome': string;
+  'medicalReport.clinice': string;
+  'medicalReport.paraclinice': string;
+  'medicalReport.diagnostic': string;
+  'medicalReport.recomandari': string;
+  'medicalReport.save': string;
+  'medicalReport.cancel': string;
+  'medicalReport.success': string;
+  'medicalReport.error': string;
+  'medicalReport.appointmentCompleted': string;
 };
 
 // Translation keys and values
@@ -267,6 +289,28 @@ const translations: Record<Language, TranslationKeys> = {
     'reviews.stars': 'stele',
     'reviews.reviewSingular': 'recenzie',
     'reviews.reviewPlural': 'recenzii',
+    
+    // Status Management
+    'status.changeStatus': 'Schimbă Status',
+    'status.selectStatus': 'Selectează Status',
+    'status.statusUpdateSuccess': 'Statusul programării a fost actualizat cu succes',
+    'status.statusUpdateError': 'Eroare la actualizarea statusului programării',
+    
+    // Medical Reports
+    'medicalReport.title': 'Raport Medical',
+    'medicalReport.create': 'Creează Raport',
+    'medicalReport.createReport': 'Creează Raport Medical',
+    'medicalReport.antecedente': 'Antecedente',
+    'medicalReport.simptome': 'Simptome',
+    'medicalReport.clinice': 'Examen Clinic',
+    'medicalReport.paraclinice': 'Examen Paraclinic',
+    'medicalReport.diagnostic': 'Diagnostic',
+    'medicalReport.recomandari': 'Recomandări',
+    'medicalReport.save': 'Salvează Raport',
+    'medicalReport.cancel': 'Anulează',
+    'medicalReport.success': 'Raportul medical a fost creat cu succes',
+    'medicalReport.error': 'Eroare la crearea raportului medical',
+    'medicalReport.appointmentCompleted': 'Programarea este finalizată - Se poate crea raport medical',
   },
   en: {
     // Dashboard
@@ -394,6 +438,28 @@ const translations: Record<Language, TranslationKeys> = {
     'reviews.stars': 'stars',
     'reviews.reviewSingular': 'review',
     'reviews.reviewPlural': 'reviews',
+    
+    // Status Management
+    'status.changeStatus': 'Change Status',
+    'status.selectStatus': 'Select Status',
+    'status.statusUpdateSuccess': 'Appointment status updated successfully',
+    'status.statusUpdateError': 'Error updating appointment status',
+    
+    // Medical Reports
+    'medicalReport.title': 'Medical Report',
+    'medicalReport.create': 'Create Report',
+    'medicalReport.createReport': 'Create Medical Report',
+    'medicalReport.antecedente': 'Medical History',
+    'medicalReport.simptome': 'Symptoms',
+    'medicalReport.clinice': 'Clinical Findings',
+    'medicalReport.paraclinice': 'Paraclinical Findings',
+    'medicalReport.diagnostic': 'Diagnosis',
+    'medicalReport.recomandari': 'Recommendations',
+    'medicalReport.save': 'Save Report',
+    'medicalReport.cancel': 'Cancel',
+    'medicalReport.success': 'Medical report created successfully',
+    'medicalReport.error': 'Error creating medical report',
+    'medicalReport.appointmentCompleted': 'Appointment is completed - Medical report can be created',
   }
 };
 

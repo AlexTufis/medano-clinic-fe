@@ -57,6 +57,11 @@ export interface UpdateUserRoleDto {
   phone?: string;
 }
 
+export interface UpdateAppointmentStatusDto {
+  status: string; // "scheduled", "completed", "cancelled", "no-show", "in-progress"
+  adminNotes?: string; // Optional notes from admin explaining the status change
+}
+
 export interface RegisterDto {
   userName: string;
   email: string;
@@ -205,12 +210,14 @@ export interface CreateReviewDto {
 export interface ReviewDto {
   id: string;
   doctorId: string;
+  doctorName: string; // NEW: Doctor's full name
   clientId: string;
   clientName: string;
-  appointmentId: string;
   rating: number;
-  comment: string;
+  comment?: string; // Optional comment
   createdAt: string;
+  appointmentId: string;
+  appointmentDate: string; // NEW: Appointment date in string format
 }
 
 export interface AppointmentHourDto {
@@ -221,4 +228,34 @@ export interface AppointmentHourDto {
   isActive: boolean;
   createdAt: string; // String format for frontend compatibility
   updatedAt?: string; // String format for frontend compatibility
+}
+
+export interface CreateMedicalReportDto {
+  appointmentId: string;
+  antecedente?: string; // Medical history
+  simptome?: string; // Symptoms
+  clinice?: string; // Clinical findings
+  paraclinice?: string; // Paraclinical findings
+  diagnostic?: string; // Diagnosis
+  recomandari?: string; // Recommendations
+}
+
+export interface MedicalReportDto {
+  id: string;
+  appointmentId: string;
+  doctorId: string;
+  doctorName: string;
+  doctorSpecialization: string;
+  patientId: string;
+  patientName: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  antecedente?: string; // Medical history
+  simptome?: string; // Symptoms
+  clinice?: string; // Clinical findings
+  paraclinice?: string; // Paraclinical findings
+  diagnostic?: string; // Diagnosis
+  recomandari?: string; // Recommendations
+  createdAt: string;
+  updatedAt?: string;
 }

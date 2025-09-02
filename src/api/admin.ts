@@ -3,6 +3,7 @@ import {
   UserDto,
   AppointmentResponseDto,
   UpdateUserRoleDto,
+  UpdateAppointmentStatusDto,
 } from "../types/dto";
 import apiClient from "./apiClient";
 
@@ -39,6 +40,22 @@ export async function updateUserRole(
     return response.data;
   } catch (error) {
     console.error("Error updating user role:", error);
+    throw error;
+  }
+}
+
+export async function updateAppointmentStatus(
+  appointmentId: string,
+  dto: UpdateAppointmentStatusDto
+): Promise<AppointmentResponseDto> {
+  try {
+    const response = await apiClient.put<AppointmentResponseDto>(
+      `/Admin/appointments/${appointmentId}/status`,
+      dto
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating appointment status:", error);
     throw error;
   }
 }

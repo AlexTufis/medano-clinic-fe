@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { AdminDashboardDto, UserDto, AppointmentResponseDto, UpdateUserRoleDto } from '../types/dto';
-import { getAdminDashboardStats, getAllUsers, getAllAppointments, updateUserRole } from '../api/admin';
+import { AdminDashboardDto, UserDto, AppointmentResponseDto, UpdateUserRoleDto, ReviewDto } from '../types/dto';
+import { getAdminDashboardStats, getAllUsers, getAllAppointments, updateUserRole, updateAppointmentStatus } from '../api/admin';
+import { getReviews } from '../api/client';
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import Toast from './Toast';
@@ -16,12 +17,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [dashboardData, setDashboardData] = useState<AdminDashboardDto | null>(null);
   const [users, setUsers] = useState<UserDto[]>([]);
   const [appointments, setAppointments] = useState<AppointmentResponseDto[]>([]);
+  const [reviews, setReviews] = useState<ReviewDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [usersLoading, setUsersLoading] = useState<boolean>(false);
   const [appointmentsLoading, setAppointmentsLoading] = useState<boolean>(false);
+  const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
   const [roleUpdateLoading, setRoleUpdateLoading] = useState<boolean>(false);
+  const [appointmentStatusUpdating, setAppointmentStatusUpdating] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'appointments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'appointments' | 'reviews'>('overview');
   
   // Modal state for user role management
   const [showRoleModal, setShowRoleModal] = useState<boolean>(false);
@@ -109,6 +113,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     fetchAppointments();
   }, [activeTab]);
 
+  // Fetch reviews when reviews tab is activated
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (activeTab === 'reviews') {
+        try {
+          setReviewsLoading(true);
+          const reviewsData = await getReviews();
+          setReviews(reviewsData);
+        } catch (err) {
+          console.error('Error fetching reviews:', err);
+          setError('Failed to load reviews data');
+        } finally {
+          setReviewsLoading(false);
+        }
+      }
+    };
+
+    fetchReviews();
+  }, [activeTab]);
+
   // Helper function to get translated status
   const getTranslatedStatus = (status: string): string => {
     switch (status) {
@@ -186,6 +210,58 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       showToast(t('userManagement.roleUpdateError'), 'error');
     } finally {
       setRoleUpdateLoading(false);
+    }
+  };
+
+  // Handle appointment status change
+  const handleAppointmentStatusChange = async (appointmentId: string, newStatus: string) => {
+    try {
+      setAppointmentStatusUpdating(prev => new Set(prev).add(appointmentId));
+      
+      let adminNotes = '';
+      switch (newStatus) {
+        case 'no-show':
+          adminNotes = 'Client did not show up for appointment';
+          break;
+        case 'completed':
+          adminNotes = 'Appointment completed';
+          break;
+        case 'cancelled':
+          adminNotes = 'Appointment cancelled';
+          break;
+        case 'scheduled':
+          adminNotes = 'Appointment rescheduled or status updated';
+          break;
+        default:
+          adminNotes = `Status changed to ${newStatus}`;
+      }
+      
+      const updatedAppointment = await updateAppointmentStatus(appointmentId, {
+        status: newStatus,
+        adminNotes
+      });
+      
+      // Update local appointments state
+      setAppointments(prevAppointments => 
+        prevAppointments.map(appointment => 
+          appointment.id === appointmentId 
+            ? { ...appointment, status: updatedAppointment.status }
+            : appointment
+        )
+      );
+      
+      // Show success toast
+      showToast(t('status.statusUpdateSuccess'), 'success');
+      
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+      showToast(t('status.statusUpdateError'), 'error');
+    } finally {
+      setAppointmentStatusUpdating(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(appointmentId);
+        return newSet;
+      });
     }
   };
 
@@ -418,6 +494,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 <th>{t('appointments.doctor')}</th>
                 <th>{t('booking.reason')}</th>
                 <th>{t('appointments.status')}</th>
+                <th>{t('status.changeStatus')}</th>
               </tr>
             </thead>
             <tbody>
@@ -436,6 +513,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                     <span className={`status-badge status-${appointment.status}`}>
                       {getTranslatedStatus(appointment.status)}
                     </span>
+                  </td>
+                  <td>
+                    <div className="status-change-container">
+                      <select
+                        value={appointment.status}
+                        onChange={(e) => handleAppointmentStatusChange(appointment.id, e.target.value)}
+                        disabled={appointmentStatusUpdating.has(appointment.id)}
+                        className="status-select"
+                        title={t('status.selectStatus')}
+                      >
+                        <option value="scheduled">{t('status.scheduled')}</option>
+                        <option value="completed">{t('status.completed')}</option>
+                        <option value="cancelled">{t('status.cancelled')}</option>
+                        <option value="no-show">{t('status.noShow')}</option>
+                      </select>
+                      {appointmentStatusUpdating.has(appointment.id) && (
+                        <LoadingSpinner size="small" />
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -552,6 +648,71 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     );
   };
 
+  const renderReviews = () => {
+    if (reviewsLoading) {
+      return (
+        <div className="loading-container" style={{ textAlign: 'center', padding: '40px' }}>
+          <LoadingSpinner size="medium" />
+          <p>{t('reviews.loadingReviews') || 'Loading reviews...'}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="reviews-content">
+        <div className="content-header">
+          <h3>All Reviews</h3>
+          <div className="review-stats">
+            <span>Total: {reviews.length}</span>
+            <span>
+              Average Rating: {
+                reviews.length > 0
+                  ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
+                  : 'N/A'
+              }
+            </span>
+          </div>
+        </div>
+
+        {reviews.length === 0 ? (
+          <div className="no-data">
+            <p>No reviews found</p>
+          </div>
+        ) : (
+          <div className="reviews-grid">
+            {reviews.map((review) => (
+              <div key={review.id} className="review-card">
+                <div className="review-header">
+                  <div className="review-rating">
+                    <span className="rating-stars">
+                      {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                    </span>
+                    <span className="rating-number">({review.rating}/5)</span>
+                  </div>
+                </div>
+                
+                <div className="review-content">
+                  {review.comment && <p className="review-comment">{review.comment}</p>}
+                </div>
+                
+                <div className="review-footer">
+                  <div className="review-people">
+                    <div className="client-info">
+                      <strong>Client:</strong> {review.clientName}
+                    </div>
+                    <div className="doctor-info">
+                      <strong>Doctor:</strong> {review.doctorName}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="admin-dashboard">
       <div className="dashboard-header">
@@ -583,12 +744,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         >
           📅 {t('dashboard.appointments')}
         </button>
+        <button 
+          className={`nav-btn ${activeTab === 'reviews' ? 'active' : ''}`}
+          onClick={() => setActiveTab('reviews')}
+        >
+          ⭐ Reviews
+        </button>
       </div>
 
       <div className="dashboard-content">
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'users' && renderUsers()}
         {activeTab === 'appointments' && renderAppointments()}
+        {activeTab === 'reviews' && renderReviews()}
       </div>
 
       {/* Role Change Modal */}

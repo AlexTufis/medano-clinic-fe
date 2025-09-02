@@ -175,6 +175,13 @@
   background: #f8f9fa;
 }
 
+/* Actions column styling */
+.appointments-table th:last-child,
+.appointments-table td:last-child {
+  text-align: center;
+  width: 120px;
+}
+
 /* Status badges */
 .status-badge {
   padding: 0.25rem 0.75rem;
@@ -401,5 +408,195 @@
 
   .review-rating {
     align-self: flex-start;
+  }
+}
+
+/* Medical Report Styles */
+.create-report-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 90px;
+}
+
+.create-report-btn:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.create-report-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.no-action {
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+}
+
+.medical-report-modal {
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.medical-report-modal .modal-body {
+  padding: 1.5rem;
+}
+
+.appointment-info {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #007bff;
+}
+
+.appointment-info p {
+  margin: 0.5rem 0;
+  color: #495057;
+}
+
+.medical-report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.form-group textarea {
+  padding: 0.75rem;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-group textarea::placeholder {
+  color: #adb5bd;
+  font-style: italic;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+  border-radius: 0 0 8px 8px;
+  margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+}
+
+.modal-footer .btn-primary,
+.modal-footer .btn-secondary {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 110px;
+  max-width: 150px;
+  margin-top: 10px;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 110px;
+  max-width: 150px;
+  justify-content: center;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive design for medical report modal */
+@media (max-width: 768px) {
+  .medical-report-modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-footer {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    min-width: 100px;
+    max-width: 140px;
   }
 }

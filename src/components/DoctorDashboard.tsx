@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ReviewDto, AppointmentResponseDto, User } from '../types/dto';
-import { getDoctorReviews, getDoctorAppointments } from '../api/doctor';
+import { ReviewDto, AppointmentResponseDto, User, CreateMedicalReportDto } from '../types/dto';
+import { getDoctorReviews, getDoctorAppointments, createMedicalReport } from '../api/doctor';
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import Toast from './Toast';
@@ -21,6 +21,20 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout, currentUser
   const [error, setError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'appointments' | 'reviews'>('appointments');
   
+  // Medical Report Modal state
+  const [showMedicalReportModal, setShowMedicalReportModal] = useState<boolean>(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentResponseDto | null>(null);
+  const [medicalReportData, setMedicalReportData] = useState<CreateMedicalReportDto>({
+    appointmentId: '',
+    antecedente: '',
+    simptome: '',
+    clinice: '',
+    paraclinice: '',
+    diagnostic: '',
+    recomandari: ''
+  });
+  const [medicalReportLoading, setMedicalReportLoading] = useState<boolean>(false);
+  
   // Toast state
   const [toast, setToast] = useState<{
     message: string;
@@ -40,6 +54,63 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout, currentUser
   // Function to hide toast
   const hideToast = () => {
     setToast(prev => ({ ...prev, isVisible: false }));
+  };
+
+  // Medical Report Modal handlers
+  const handleOpenMedicalReportModal = (appointment: AppointmentResponseDto) => {
+    setSelectedAppointment(appointment);
+    setMedicalReportData({
+      appointmentId: appointment.id,
+      antecedente: '',
+      simptome: '',
+      clinice: '',
+      paraclinice: '',
+      diagnostic: '',
+      recomandari: ''
+    });
+    setShowMedicalReportModal(true);
+  };
+
+  const handleCloseMedicalReportModal = () => {
+    setShowMedicalReportModal(false);
+    setSelectedAppointment(null);
+    setMedicalReportData({
+      appointmentId: '',
+      antecedente: '',
+      simptome: '',
+      clinice: '',
+      paraclinice: '',
+      diagnostic: '',
+      recomandari: ''
+    });
+  };
+
+  const handleMedicalReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedAppointment) return;
+
+    try {
+      setMedicalReportLoading(true);
+      
+      await createMedicalReport(medicalReportData);
+      
+      showToast(t('medicalReport.success'), 'success');
+      handleCloseMedicalReportModal();
+      
+    } catch (error) {
+      console.error('Error creating medical report:', error);
+      showToast(t('medicalReport.error'), 'error');
+    } finally {
+      setMedicalReportLoading(false);
+    }
+  };
+
+  const handleMedicalReportInputChange = (field: keyof CreateMedicalReportDto, value: string) => {
+    setMedicalReportData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   // Fetch appointments when appointments tab is activated
@@ -173,6 +244,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout, currentUser
                 <th>{t('appointments.patient')}</th>
                 <th>{t('booking.reason')}</th>
                 <th>{t('appointments.status')}</th>
+                <th>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -186,6 +258,19 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout, currentUser
                     <span className={`status-badge status-${appointment.status}`}>
                       {getTranslatedStatus(appointment.status)}
                     </span>
+                  </td>
+                  <td>
+                    {appointment.status === 'completed' ? (
+                      <button
+                        className="create-report-btn"
+                        onClick={() => handleOpenMedicalReportModal(appointment)}
+                        title={t('medicalReport.appointmentCompleted')}
+                      >
+                        {t('medicalReport.create')}
+                      </button>
+                    ) : (
+                      <span className="no-action">-</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -289,6 +374,122 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onLogout, currentUser
         {activeTab === 'appointments' && renderAppointments()}
         {activeTab === 'reviews' && renderReviews()}
       </div>
+
+      {/* Medical Report Modal */}
+      {showMedicalReportModal && selectedAppointment && (
+        <div className="modal-overlay" onClick={handleCloseMedicalReportModal}>
+          <div className="modal-content medical-report-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{t('medicalReport.createReport')}</h3>
+              <button className="modal-close" onClick={handleCloseMedicalReportModal}>
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="appointment-info">
+                <p><strong>{t('appointments.patient')}:</strong> {selectedAppointment.clientName}</p>
+                <p><strong>{t('appointments.date')}:</strong> {new Date(selectedAppointment.appointmentDate).toLocaleDateString()}</p>
+                <p><strong>{t('appointments.time')}:</strong> {selectedAppointment.appointmentTime}</p>
+                <p><strong>{t('booking.reason')}:</strong> {selectedAppointment.reason}</p>
+              </div>
+              
+              <form onSubmit={handleMedicalReportSubmit} className="medical-report-form">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="antecedente">{t('medicalReport.antecedente')}:</label>
+                    <textarea
+                      id="antecedente"
+                      value={medicalReportData.antecedente}
+                      onChange={(e) => handleMedicalReportInputChange('antecedente', e.target.value)}
+                      rows={3}
+                      placeholder="Antecedentele medicale ale pacientului..."
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="simptome">{t('medicalReport.simptome')}:</label>
+                    <textarea
+                      id="simptome"
+                      value={medicalReportData.simptome}
+                      onChange={(e) => handleMedicalReportInputChange('simptome', e.target.value)}
+                      rows={3}
+                      placeholder="Simptomele prezentate de pacient..."
+                    />
+                  </div>
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="clinice">{t('medicalReport.clinice')}:</label>
+                    <textarea
+                      id="clinice"
+                      value={medicalReportData.clinice}
+                      onChange={(e) => handleMedicalReportInputChange('clinice', e.target.value)}
+                      rows={3}
+                      placeholder="Constatările examenului clinic..."
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="paraclinice">{t('medicalReport.paraclinice')}:</label>
+                    <textarea
+                      id="paraclinice"
+                      value={medicalReportData.paraclinice}
+                      onChange={(e) => handleMedicalReportInputChange('paraclinice', e.target.value)}
+                      rows={3}
+                      placeholder="Rezultatele investigațiilor paraclinice..."
+                    />
+                  </div>
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="diagnostic">{t('medicalReport.diagnostic')}:</label>
+                    <textarea
+                      id="diagnostic"
+                      value={medicalReportData.diagnostic}
+                      onChange={(e) => handleMedicalReportInputChange('diagnostic', e.target.value)}
+                      rows={2}
+                      placeholder="Diagnosticul stabilit..."
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="recomandari">{t('medicalReport.recomandari')}:</label>
+                    <textarea
+                      id="recomandari"
+                      value={medicalReportData.recomandari}
+                      onChange={(e) => handleMedicalReportInputChange('recomandari', e.target.value)}
+                      rows={3}
+                      placeholder="Recomandările pentru tratament..."
+                    />
+                  </div>
+                </div>
+                
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={handleCloseMedicalReportModal}
+                    disabled={medicalReportLoading}
+                  >
+                    {t('medicalReport.cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={medicalReportLoading || !medicalReportData.diagnostic}
+                  >
+                    {medicalReportLoading ? <LoadingSpinner size="small" /> : t('medicalReport.save')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       <Toast
